@@ -23,6 +23,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["web/", ".dockerignore", "Dockerfile", "start.sh"]
+
 [tool.uv]
 
 [dependency-groups]
