@@ -1,6 +1,6 @@
 [project]
 name = "backboard-cmo"
-version = "0.1.0"
+version = "0.1.1"
 description = "AI CMO Terminal — Backboard agents for traffic and users"
 requires-python = ">=3.11"
 dependencies = [
