@@ -9,9 +9,28 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v0.1.1",
+    version: "v1.0.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🐾", text: "Refined paw-print favicon — bolder, more balanced toes" },
+    ],
+  },
+  {
+    version: "v1.0.0",
+    date: "Mar 2026",
+    items: [
+      { emoji: "🛡️", text: "Admin panel for service-level controls" },
+      { emoji: "📄", text: "PDF export — download your full report" },
+      { emoji: "🕓", text: "Run history — replay any past analysis" },
+      { emoji: "🔐", text: "Google sign-in and email/password auth" },
+      { emoji: "💳", text: "Pro plan with Stripe — $5/month for unlimited analyses" },
+      { emoji: "🐾", text: "Paw-print animations on the home page (the important stuff)" },
+    ],
+  },
+  {
+    version: "v0.1.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🔐", text: "Google sign-in and email/password auth" },
       { emoji: "💳", text: "Pro plan with Stripe — $5/month for unlimited analyses" },
