@@ -7,3 +7,14 @@ __pycache__/
 terraform/terraform.tfvars
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
+.DS_Store
+.cursor
+.cursorignore
+ terraform/.terraform.lock.hcl
+terraform/.terraform/
+terraform/bootstrap/.terraform.lock.hcl
+terraform/bootstrap/.terraform/
+terraform/bootstrap/terraform.tfstate
+terraform/bootstrap/terraform.tfstate.backup
+model_list.csv
+terraform/.terraform.lock.hcl

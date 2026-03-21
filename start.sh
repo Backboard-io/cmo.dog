@@ -22,12 +22,7 @@ BE_PID=$!
 sleep 5 
 cd web 
 
-npm install --legacy-peer-deps && npm run build && \
-mkdir -p .next/standalone/web/.next && \
-cp -r .next/static .next/standalone/web/.next/static && \
-cp -r public .next/standalone/web/public
-
-PORT=8000 NODE_ENV=production HOSTNAME=0.0.0.0 exec node .next/standalone/web/server.js &
+npm install --legacy-peer-deps && PORT=8000 NODE_ENV=production HOSTNAME=0.0.0.0 npm run dev &
 FE_PID=$!
 
 wait $BE_PID $FE_PID

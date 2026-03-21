@@ -20,6 +20,9 @@ COPY web /app/web
 EXPOSE 8000
 EXPOSE 9000
 
+ARG NEXT_PUBLIC_API_URL=""
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 WORKDIR /app/web
 RUN npm install --legacy-peer-deps && npm run build && \
 mkdir -p /app/web/.next/standalone/.next && \

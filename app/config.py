@@ -16,8 +16,8 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     google_client_secret: str = ""
 
-    domain_client: str = "http://localhost:8000"
-    domain_server: str = "http://localhost:8000"
+    domain_client: str = ""
+    domain_server: str = ""
     free_prompts_limit: int = 5
     admin_emails: str = ""  # comma-separated list of admin email addresses
 

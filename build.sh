@@ -10,7 +10,7 @@ TF_DIR="$(cd "$(dirname "$0")/terraform" && pwd)"
 ENV="${1:-dev}"
 TAG="${2:-latest}"
 IMAGE_TAG="${ENV}-${TAG}"
-
+source .env
 STEPS=8
 
 echo "──────────────────────────────────────────────"
@@ -41,7 +41,7 @@ aws ecr get-login-password --region "${AWS_REGION}" \
 
 # ── 3-5. Docker build, tag, push ────────────────────────────────────────
 echo "[3/${STEPS}] Building Docker image..."
-docker buildx build --platform linux/amd64 -f Dockerfile -t "${APP_NAME}" .
+docker buildx build --build-arg NEXT_PUBLIC_API_URL="${APP_RUNNER_URL}" --platform linux/amd64 -f Dockerfile -t "${APP_NAME}" .
 
 echo "[4/${STEPS}] Tagging ${APP_NAME}:${IMAGE_TAG}..."
 docker tag "${APP_NAME}:latest" "${ECR_URL}/${APP_NAME}-${ENV}:${IMAGE_TAG}"
