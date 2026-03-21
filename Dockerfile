@@ -23,7 +23,8 @@ EXPOSE 9000
 WORKDIR /app/web
 RUN npm install --legacy-peer-deps && npm run build && \
 mkdir -p /app/web/.next/standalone/.next && \
-cp -r /app/web/.next/static /app/web/.next/standalone/.next/static
+cp -r /app/web/.next/static /app/web/.next/standalone/.next/static && \
+cp -r /app/web/public /app/web/.next/standalone/public
 WORKDIR /app
 
 CMD ["sh", "-c", "uvicorn app.main:app --host 127.0.0.1 --port 9000 & sleep 5 && cd /app/web && PORT=8000 NODE_ENV=production HOSTNAME=0.0.0.0 exec node .next/standalone/server.js"]

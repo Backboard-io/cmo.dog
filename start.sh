@@ -13,11 +13,21 @@ rm -rf dist build *.egg-info 2>/dev/null || true
 
 cleanup() {
   echo "Shutting down..."
-  docker rm -f backboard-cmo-app
+  kill $BE_PID $FE_PID
   exit 0
 }
 trap cleanup EXIT SIGINT SIGTERM
+uv run uvicorn app.main:app --host 0.0.0.0 --port 9000 & 
+BE_PID=$!
+sleep 5 
+cd web 
 
-docker build -t backboard-cmo-app .
-docker run -d --name backboard-cmo-app -p 8000:8000 backboard-cmo-app
-docker logs -f backboard-cmo-app
+npm install --legacy-peer-deps && npm run build && \
+mkdir -p .next/standalone/web/.next && \
+cp -r .next/static .next/standalone/web/.next/static && \
+cp -r public .next/standalone/web/public
+
+PORT=8000 NODE_ENV=production HOSTNAME=0.0.0.0 exec node .next/standalone/web/server.js &
+FE_PID=$!
+
+wait $BE_PID $FE_PID

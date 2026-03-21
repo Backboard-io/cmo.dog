@@ -4,3 +4,6 @@ uv.lock
 __pycache__/
 *.pyc
 *.pyo
+terraform/terraform.tfvars
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup

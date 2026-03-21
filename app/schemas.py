@@ -6,6 +6,8 @@ from typing import Optional
 
 class RunCreate(BaseModel):
     website_url: str = Field(..., description="Website URL to analyze")
+    llm_provider: str = Field("openrouter", description="LLM provider (e.g. openrouter, anthropic, openai)")
+    model_name: str = Field("anthropic/claude-sonnet-4-5", description="Model name within the provider")
 
 
 class RunResponse(BaseModel):
@@ -82,3 +84,5 @@ class RunStatus(BaseModel):
     chat_status: str = "loading"
     chat_messages: list[ChatMessage] = Field(default_factory=list)
     credits: int = 2000
+    llm_provider: str = "openrouter"
+    model_name: str = "anthropic/claude-sonnet-4-5"

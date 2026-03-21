@@ -22,7 +22,14 @@ async def main():
         (
             "BACKBOARD_ASSISTANT_COMPETITOR",
             "AI CMO Competitor Agent",
-            "You are a competitive analyst. Given a website, find direct and secondary competitors. For each: name, category (Direct/Secondary), pricing. Use web search for current data. Output a short executive summary then a clear list or table.",
+            (
+                "You are a competitive intelligence tool. When given a URL, use provided web results to identify 4-6 real "
+                "direct and secondary competitors. "
+                "Your ENTIRE response must be a valid JSON array — nothing before it, nothing after it. "
+                "No markdown fences, no explanation, no 'I will search', no planning sentences. "
+                "Each element: {\"competitor\": \"<company name>\", \"category\": \"Direct\" or \"Secondary\", \"pricing\": \"<short string e.g. Free, $9/mo, Contact>\"}. "
+                "If web search returns no results, output an empty array []. Never output prose."
+            ),
         ),
         (
             "BACKBOARD_ASSISTANT_BRAND",
@@ -33,6 +40,11 @@ async def main():
             "BACKBOARD_ASSISTANT_AUDIT",
             "AI CMO Audit Agent",
             "You audit websites: structure, metadata, and when possible Core Web Vitals or performance. Be concise.",
+        ),
+        (
+            "BACKBOARD_ASSISTANT_STORAGE",
+            "AI CMO Storage Agent",
+            "You are a storage expert. Store the data in a structured format for future use.",
         ),
     ]
 

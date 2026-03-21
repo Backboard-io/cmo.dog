@@ -1,13 +1,13 @@
 <p align="center">
-  <img src="web/public/openokara.png" alt="Backboard CMO" width="480" />
+  <img src="assets/onni.png" alt="Onni — CMO.dog" width="200" style="border-radius:50%;" />
 </p>
 
-<h1 align="center">Backboard CMO</h1>
+<h1 align="center">CMO.dog</h1>
 
 <p align="center">
-  <strong>Drop in a URL. Get a Chief Marketing Officer.</strong>
+  <strong>Drop in a URL. Onni fetches your Chief Marketing Officer.</strong>
   <br />
-  AI agents that audit your site, map your competitors, and find your brand voice — in seconds.
+  A good Finnish dog who audits your site, maps your competitors, and finds your brand voice — in seconds.
 </p>
 
 <p align="center">
@@ -20,11 +20,13 @@
 
 ---
 
-## What is this?
+## Who is Onni?
+
+Onni is a Finnish dog. In Finnish, *onni* means **luck** — and that's what he brings your marketing.
 
 Hiring a CMO costs $200k/year. Good ones take months to ramp up.
 
-**Backboard CMO does it in 60 seconds.**
+**Onni does it in 60 seconds.**
 
 Type in any URL. Four AI agents fire up in parallel — they read your site, search the web, and hand back:
 
@@ -40,14 +42,14 @@ No prompt engineering. No setup. Just a URL.
 
 ## Demo
 
-> Type a URL → watch the terminal run → read your marketing brief
+> Type a URL → watch Onni run → read your marketing brief
 
 ```
 > Checking what content and documents you have...
 > Content and documents summarized.
 > Now let me check out your competition...
 > Searching: yoursite.com competitors alternative
-> Evaluating competitor's positioning strategy...
+> Evaluating competitor positioning strategy...
 > Competitor analysis complete.
 > Now let me figure out your brand voice...
 > Brand voice guide ready
@@ -67,7 +69,7 @@ No prompt engineering. No setup. Just a URL.
 | **Competitor Intel** | Direct vs. secondary competitors with pricing — sourced live from the web |
 | **Brand Voice** | 2–3 sentence brand profile your team can actually use |
 | **SEO Fix Queue** | Ranked issues (Critical → High → Medium) with numbered remediation steps |
-| **AI CMO Chat** | Ask follow-up questions about your audit — it remembers context |
+| **AI CMO Chat** | Ask follow-up questions about your audit — Onni remembers context |
 | **Live Terminal** | Real-time SSE stream so you see agents working, not a spinner |
 
 ---
@@ -78,7 +80,7 @@ No prompt engineering. No setup. Just a URL.
 |---|---|
 | AI Agents | [Backboard.io](https://backboard.io) — threads, assistants, web search |
 | API | FastAPI + Uvicorn, Server-Sent Events |
-| Frontend | Next.js 15, Tailwind CSS |
+| Frontend | Next.js 15, Tailwind CSS, shadcn/ui |
 | Runtime | Python 3.11+ via `uv`, Node 18+ |
 | Schemas | Pydantic v2 |
 
@@ -89,8 +91,8 @@ No prompt engineering. No setup. Just a URL.
 ### 1. Clone & install
 
 ```bash
-git clone https://github.com/Backboard-io/openokara.git
-cd backboard-cmo
+git clone https://github.com/your-org/cmo.dog.git
+cd cmo.dog
 
 # Python deps
 uv sync
@@ -162,7 +164,7 @@ Each agent is a [Backboard](https://backboard.io) assistant with live web search
 ## Project Structure
 
 ```
-backboard-cmo/
+cmo.dog/
 ├── app/
 │   ├── main.py          # FastAPI routes + SSE
 │   ├── orchestrator.py  # Agent pipeline
@@ -170,6 +172,8 @@ backboard-cmo/
 ├── web/
 │   ├── src/app/         # Next.js pages
 │   └── src/components/  # UI components
+├── assets/
+│   └── onni.png         # The dog himself
 ├── scripts/             # Smoke tests
 ├── pyproject.toml       # uv/hatch config
 └── start.sh             # Clean start script
@@ -190,7 +194,7 @@ POST /runs/{id}/chat    body: { message }   → { reply }
 
 ## Contributing
 
-Pull requests welcome. Please keep it surgical — one concern per PR.
+Pull requests welcome. Keep it surgical — one concern per PR.
 
 - Backend logic lives in `app/` only. No logic in the frontend.
 - Pydantic models for all data shapes.
@@ -210,7 +214,7 @@ Pull requests welcome. Please keep it surgical — one concern per PR.
 ---
 
 <p align="center">
-  Made with ☕ and too many competitor analyses.
+  Made with 🐾 and too many competitor analyses.
   <br />
-  <a href="https://backboard.io">backboard.io</a>
+  <a href="https://cmo.dog">cmo.dog</a> · <a href="https://backboard.io">backboard.io</a>
 </p>

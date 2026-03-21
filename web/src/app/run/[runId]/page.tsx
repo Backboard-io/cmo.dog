@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { getRun, chatRun, type RunStatus } from "@/lib/api";
+import Image from "next/image";
+import { getRun, chatRun, getStoredToken, type RunStatus } from "@/lib/api";
 import { Terminal } from "@/components/terminal";
 import { ReportModal } from "@/components/report-modal";
 import { FixDrawer } from "@/components/fix-drawer";
@@ -9,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronRight, Plus, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-
+import { PdfReportButton } from "@/components/PdfReportButton";
 function CircleProgress({ score, tone }: { score: number; tone: string }) {
   const r = 22;
   const cx = 28;
@@ -75,9 +76,13 @@ function HealthRow({
   );
 }
 
-const GhostIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-    <path d="M12 2a8 8 0 0 0-8 8v10l2-2 2 2 2-2 2 2 2-2 2 2V10a8 8 0 0 0-8-8zm0 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm-3 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z" />
+const PawIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 100 100" fill="currentColor" aria-hidden>
+    <ellipse cx="50" cy="72" rx="23" ry="19" />
+    <ellipse cx="21" cy="46" rx="10" ry="13" transform="rotate(-18, 21, 46)" />
+    <ellipse cx="38" cy="32" rx="10" ry="13" transform="rotate(-6, 38, 32)" />
+    <ellipse cx="62" cy="32" rx="10" ry="13" transform="rotate(6, 62, 32)" />
+    <ellipse cx="79" cy="46" rx="10" ry="13" transform="rotate(18, 79, 46)" />
   </svg>
 );
 
@@ -117,6 +122,8 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+  const prevMsgCountRef = useRef(0);
 
   const resolvedParams = React.use(params);
   const id = resolvedParams.runId;
@@ -124,7 +131,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const refresh = useCallback(async () => {
     if (!id) return;
     try {
-      const data = await getRun(id);
+      const data = await getRun(id, getStoredToken());
       setRun(data);
     } catch {
       setRun(null);
@@ -139,7 +146,14 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   }, [refresh]);
 
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const msgs = run?.chat_messages ?? [];
+    const newCount = msgs.length;
+    const prevCount = prevMsgCountRef.current;
+    if (newCount > prevCount) {
+      // New message arrived — scroll to bottom
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      prevMsgCountRef.current = newCount;
+    }
   }, [run?.chat_messages]);
 
   const isLoading = run?.status === "pending" || run?.status === "running";
@@ -157,6 +171,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
     setChatSending(true);
     try {
       const { messages } = await chatRun(runId, msg);
+      prevMsgCountRef.current = 0; // force scroll on next update
       setRun((prev) => prev ? { ...prev, chat_messages: messages } : prev);
     } finally {
       setChatSending(false);
@@ -178,8 +193,17 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Dark zone — seamless with header, no border/rounding */}
-      <div className="flex-shrink-0 bg-bb-phantom px-6 pt-0 pb-4">
-        <Terminal runId={runId} className="w-full" />
+      <div className="flex-shrink-0 bg-bb-phantom pb-4">
+        <Terminal runId={runId} className="w-full" isComplete={!isLoading && run !== null} />
+        <div className="flex items-center justify-between mt-2 px-4">
+          <PdfReportButton run={run} disabled={isLoading} />
+          {run?.model_name && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white/60 text-[11px] font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400/80 flex-shrink-0" />
+              {run.llm_provider} · {run.model_name.split("/").pop()}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_220px_320px] gap-5 flex-1 min-h-0 overflow-hidden px-6 py-5">
@@ -188,7 +212,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
         <div className="flex flex-col gap-4 overflow-auto">
           <div className="rounded-xl border border-bb-steel/60 bg-white p-4">
             <div className="flex items-center gap-2 mb-2">
-              <GhostIcon className="w-6 h-6 text-bb-phantom" />
+              <PawIcon className="w-6 h-6 text-bb-phantom" />
               <h2 className="text-base font-semibold text-gray-900">
                 {run?.project_name || "Project"}
               </h2>
@@ -270,7 +294,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             {activeTab === "health" && (
               isLoading ? (
                 <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
-                  <GhostIcon className="w-14 h-14 text-bb-steel animate-pulse" />
+                  <PawIcon className="w-14 h-14 text-bb-steel animate-pulse" />
                   <p className="font-semibold text-gray-600 mt-3">Analyzing…</p>
                 </div>
               ) : (
@@ -406,9 +430,15 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                   </div>
                 ))}
               </div>
+            ) : (!run || isLoading) ? (
+              <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
+                <PawIcon className="w-12 h-12 text-bb-steel animate-pulse" />
+                <p className="text-sm font-semibold text-gray-600 mt-3">Researching…</p>
+                <p className="text-xs text-gray-500">Scanning for opportunities</p>
+              </div>
             ) : (
               <p className="text-sm text-gray-400 py-4 text-center border border-dashed rounded-lg">
-                {isLoading ? "Scanning for opportunities…" : "No feed items yet"}
+                No feed items yet
               </p>
             )}
           </div>
@@ -417,10 +447,16 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
         {/* ── CHAT ── */}
         <div className="flex flex-col overflow-hidden">
           <div className="rounded-xl border border-bb-steel/60 bg-white p-4 flex flex-col flex-1 min-h-0">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Chat</h3>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="relative flex-shrink-0">
+                <Image src="/onni.png" alt="Onni" width={28} height={28} className="rounded-full object-cover" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-700">Chat with Onni</h3>
+            </div>
             {chatReady ? (
               <>
-                <div className="flex-1 overflow-auto space-y-2 mb-3">
+                <div ref={chatScrollRef} className="flex-1 overflow-auto space-y-2 mb-3">
                   {chatMessages.map((msg, idx) => (
                     <div
                       key={idx}
@@ -430,7 +466,13 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                           : "bg-bb-phantom text-bb-phantomLight ml-6"
                       }`}
                     >
-                      {msg.content}
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-gray-800 prose-strong:text-gray-800 text-gray-700">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
                     </div>
                   ))}
                   <div ref={chatBottomRef} />
@@ -451,7 +493,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
               </>
             ) : (
               <div className="flex flex-col items-center justify-center flex-1 text-center">
-                <GhostIcon className="w-12 h-12 text-bb-steel" />
+                <PawIcon className="w-12 h-12 text-bb-steel" />
                 <p className="text-sm font-semibold text-gray-600 mt-3">Loading Chat</p>
                 <p className="text-xs text-gray-500">Preparing AI assistant…</p>
               </div>

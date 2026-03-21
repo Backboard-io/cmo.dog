@@ -144,3 +144,18 @@
     @apply font-sans;
   }
 }
+
+@keyframes settings-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes settings-slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes settings-staggerIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
