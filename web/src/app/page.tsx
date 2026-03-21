@@ -7,9 +7,11 @@ import { SignupModal } from "@/components/auth/SignupModal";
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { SettingsModal, FREE_PROVIDER, FREE_MODEL } from "@/components/SettingsModal";
+import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
 
 const SETTINGS_PROVIDER_KEY = "cmodog_llm_provider";
 const SETTINGS_MODEL_KEY = "cmodog_model_name";
+const PENDING_URL_KEY = "cmodog_pending_url";
 const GITHUB_REPO = "Backboard-io/cmo.dog";
 const GITHUB_URL = "https://github.com/Backboard-io/cmo.dog";
 const YOUTUBE_ID = "92brtM12mAs";
@@ -85,14 +87,6 @@ function GitHubStars() {
           </span>
         )}
       </a>
-      <a
-        href={`${GITHUB_URL}/blob/main/LICENSE`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-green-200 bg-green-50 hover:bg-green-100 transition-all duration-200 text-xs text-green-700 font-semibold"
-      >
-        MIT License
-      </a>
     </div>
   );
 }
@@ -127,6 +121,7 @@ function HomeInner() {
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showMonitor, setShowMonitor] = useState(false);
   const [llmProvider, setLlmProvider] = useState("openrouter");
   const [modelName, setModelName] = useState("anthropic/claude-sonnet-4-5");
 
@@ -160,7 +155,18 @@ function HomeInner() {
     if (ssoToken) {
       storeToken(ssoToken);
       router.replace("/");
-      refreshUser(ssoToken);
+      const savedUrl = sessionStorage.getItem(PENDING_URL_KEY);
+      if (savedUrl) {
+        sessionStorage.removeItem(PENDING_URL_KEY);
+        setPendingUrl(savedUrl);
+        // Strip protocol for display in the input
+        setUrl(savedUrl.replace(/^https?:\/\//i, ""));
+        refreshUser(ssoToken).then((info) => {
+          if (info) void launchRun(savedUrl, info);
+        });
+      } else {
+        refreshUser(ssoToken);
+      }
       return;
     }
 
@@ -219,6 +225,7 @@ function HomeInner() {
 
     if (!user) {
       setPendingUrl(target);
+      sessionStorage.setItem(PENDING_URL_KEY, target);
       setShowSignup(true);
       return;
     }
@@ -235,6 +242,7 @@ function HomeInner() {
     storeToken(newUser.token);
     setUser(newUser);
     setShowSignup(false);
+    sessionStorage.removeItem(PENDING_URL_KEY);
     if (pendingUrl) {
       const target = pendingUrl;
       setPendingUrl(null);
@@ -295,6 +303,16 @@ function HomeInner() {
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
           onUpgrade={user ? () => { setShowSettings(false); setShowUpgrade(true); } : undefined}
+        />
+      )}
+
+      {showMonitor && (
+        <MonthlyMonitorModal
+          user={user}
+          onClose={() => setShowMonitor(false)}
+          onNeedSignup={() => { setShowMonitor(false); setShowSignup(true); }}
+          onNeedUpgrade={() => { setShowMonitor(false); setShowUpgrade(true); }}
+          prefillDomain={url}
         />
       )}
 
@@ -416,6 +434,7 @@ function HomeInner() {
                     <span className="text-green-600 font-medium">Pro · unlimited</span>
                   )}
                   <button onClick={() => router.push("/history")} className="text-bb-blue hover:underline font-medium">History</button>
+                  <button onClick={() => router.push("/billing")} className="text-bb-blue hover:underline font-medium">Billing</button>
                   <button onClick={() => { clearToken(); setUser(null); }} className="hover:text-red-500 transition-colors font-medium">Log out</button>
                 </div>
               </>
@@ -431,7 +450,7 @@ function HomeInner() {
           </div>
         </div>
 
-        {/* Feature pills */}
+        {/* Feature pills + monthly monitor CTA */}
         <div
           className="flex flex-wrap justify-center gap-2 text-xs text-bb-steel"
           style={{ animation: "fadeUp 0.5s 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
@@ -451,40 +470,48 @@ function HomeInner() {
               {f.label}
             </span>
           ))}
-        </div>
 
-        {/* Footer row */}
-        <div
-          className="flex flex-wrap items-center justify-center gap-4"
-          style={{ animation: "fadeUp 0.55s 0.45s cubic-bezier(0.22,1,0.36,1) both" }}
-        >
+          {/* Monthly Monitor pill — actionable CTA */}
           <button
-            onClick={() => setShowReleaseNotes(true)}
-            className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
+            onClick={() => setShowMonitor(true)}
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-violet-200 font-medium shadow-sm hover:border-violet-400 hover:bg-violet-50 hover:shadow-[0_2px_12px_rgba(139,92,246,0.15)] transition-all active:scale-[0.97]"
           >
-            What&apos;s new in v0.1.1
+            <span>📅</span>
+            <span className="text-violet-700 group-hover:text-violet-800 transition-colors">Monthly Monitor</span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-violet-500 bg-violet-100 group-hover:bg-violet-200 px-1.5 py-0.5 rounded-full leading-none transition-colors">Pro</span>
           </button>
-
-          <span className="text-bb-steel/20 text-xs">·</span>
-
-          <a
-            href="https://backboard.io"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-bb-steel/20 bg-white/60 hover:bg-bb-blue/5 hover:border-bb-blue/30 transition-all duration-300 active:scale-[0.97]"
-            aria-label="Built on Backboard.io"
-          >
-            <span className="w-4 h-4 rounded-sm bg-bb-blue flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200" aria-hidden>
-              <svg viewBox="0 0 16 16" fill="white" className="w-2.5 h-2.5">
-                <path d="M3 2h5.5a3 3 0 0 1 0 6H3V2zm0 8h6a3 3 0 0 1 0 6H3v-6z" />
-              </svg>
-            </span>
-            <span className="text-[11px] text-bb-steel/70 group-hover:text-bb-blue transition-colors duration-200 font-medium tracking-tight">
-              Built on <span className="text-bb-phantom group-hover:text-bb-blue transition-colors duration-200">Backboard</span>
-            </span>
-          </a>
         </div>
 
+
+      </div>
+
+      {/* Footer — pinned to bottom of scroll container */}
+      <div className="mt-auto w-full flex flex-wrap items-center justify-center gap-4 py-4">
+        <button
+          onClick={() => setShowReleaseNotes(true)}
+          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
+        >
+          What&apos;s new in v1.1.0
+        </button>
+
+        <span className="text-bb-steel/20 text-xs">·</span>
+
+        <a
+          href="https://backboard.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-bb-steel/20 bg-white/60 hover:bg-bb-blue/5 hover:border-bb-blue/30 transition-all duration-300 active:scale-[0.97]"
+          aria-label="Built on Backboard.io"
+        >
+          <span className="w-4 h-4 rounded-sm bg-bb-blue flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200" aria-hidden>
+            <svg viewBox="0 0 16 16" fill="white" className="w-2.5 h-2.5">
+              <path d="M3 2h5.5a3 3 0 0 1 0 6H3V2zm0 8h6a3 3 0 0 1 0 6H3v-6z" />
+            </svg>
+          </span>
+          <span className="text-[11px] text-bb-steel/70 group-hover:text-bb-blue transition-colors duration-200 font-medium tracking-tight">
+            Built on <span className="text-bb-phantom group-hover:text-bb-blue transition-colors duration-200">Backboard.io</span>
+          </span>
+        </a>
       </div>
 
       <style jsx>{`

@@ -17,7 +17,7 @@ cleanup() {
   exit 0
 }
 trap cleanup EXIT SIGINT SIGTERM
-uv run uvicorn app.main:app --host 0.0.0.0 --port 9000 & 
+uv run uvicorn app.main:app --host 0.0.0.0 --port 9000 --reload & 
 BE_PID=$!
 sleep 5 
 cd web 

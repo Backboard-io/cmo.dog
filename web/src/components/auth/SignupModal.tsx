@@ -10,6 +10,7 @@ type Props = {
 };
 
 type Tab = "signup" | "login";
+type Feature = { icon: string; label: string; desc: string; pro?: boolean };
 
 function GoogleIcon() {
   return (
@@ -28,6 +29,7 @@ const FEATURES = [
   { icon: "🎙️", label: "Brand Voice", desc: "Capture your unique tone" },
   { icon: "📈", label: "SEO Fixes", desc: "Ranked, actionable improvements" },
   { icon: "💬", label: "AI Chat", desc: "Ask Onni anything about your site" },
+  { icon: "📅", label: "Monthly Monitor", desc: "Auto-scan + new competitor alerts", pro: true },
 ];
 
 export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
@@ -260,14 +262,19 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
           {/* Feature list */}
           <div className="flex flex-col gap-1">
             <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
-              Included free
+              What you get
             </p>
-            {FEATURES.map((f) => (
+            {(FEATURES as Feature[]).map((f) => (
               <div key={f.label} className="flex items-center gap-3 py-1.5">
                 <span className="text-lg leading-none">{f.icon}</span>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-none">{f.label}</p>
-                  <p className="text-xs text-gray-400 leading-snug">{f.desc}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-gray-900 leading-none">{f.label}</p>
+                    {f.pro && (
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full leading-none">Pro</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 leading-snug mt-0.5">{f.desc}</p>
                 </div>
               </div>
             ))}

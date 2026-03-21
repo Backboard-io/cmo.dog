@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { UserInfo } from "@/lib/api";
-import { clearToken, createBillingPortal } from "@/lib/api";
+import { clearToken } from "@/lib/api";
 
 const PawIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg
@@ -29,7 +29,6 @@ export function Header({ user }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [billingLoading, setBillingLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const usageLabel = user
@@ -48,6 +47,7 @@ export function Header({ user }: HeaderProps) {
       : "text-green-400";
 
   const isHistory = pathname === "/history";
+  const isBilling = pathname === "/billing";
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -59,16 +59,9 @@ export function Header({ user }: HeaderProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  async function handleBilling() {
-    if (!user) return;
+  function handleBilling() {
     setOpen(false);
-    setBillingLoading(true);
-    try {
-      const { url } = await createBillingPortal(user.token);
-      window.location.href = url;
-    } catch {
-      setBillingLoading(false);
-    }
+    router.push("/billing");
   }
 
   function handleLogout() {
@@ -85,22 +78,38 @@ export function Header({ user }: HeaderProps) {
           <span className="font-semibold text-white">CMO.dog</span>
         </Link>
 
-        {user && (
-          <Link
-            href="/history"
-            className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all focus:outline-none ${
-              isHistory
-                ? "bg-bb-blue/20 text-bb-blue font-semibold"
-                : "text-bb-steel hover:text-white hover:bg-white/10"
-            }`}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-              <circle cx="8" cy="8" r="6" />
-              <path d="M8 5v3.5l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            History
-          </Link>
-        )}
+        {/* {user && (
+          <>
+            <Link
+              href="/history"
+              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all focus:outline-none ${
+                isHistory
+                  ? "bg-bb-blue/20 text-bb-blue font-semibold"
+                  : "text-bb-steel hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <circle cx="8" cy="8" r="6" />
+                <path d="M8 5v3.5l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              History
+            </Link>
+            <Link
+              href="/billing"
+              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all focus:outline-none ${
+                isBilling
+                  ? "bg-bb-blue/20 text-bb-blue font-semibold"
+                  : "text-bb-steel hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <rect x="1" y="3" width="14" height="10" rx="2" />
+                <path d="M1 6h14" strokeLinecap="round" />
+              </svg>
+              Billing
+            </Link>
+          </>
+        )} */}
       </div>
 
       {user && (
@@ -156,14 +165,13 @@ export function Header({ user }: HeaderProps) {
               <button
                 role="menuitem"
                 onClick={handleBilling}
-                disabled={billingLoading}
-                className="flex items-center gap-2.5 w-full px-3 py-2 text-sm text-bb-phantomLight hover:bg-white/10 transition-colors disabled:opacity-50"
+                className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm hover:bg-white/10 transition-colors ${isBilling ? "text-bb-blue" : "text-bb-phantomLight"}`}
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
                   <rect x="1" y="3" width="14" height="10" rx="2" />
                   <path d="M1 6h14" strokeLinecap="round" />
                 </svg>
-                {billingLoading ? "Opening…" : "Billing"}
+                Billing
               </button>
 
               <div className="border-t border-bb-steelDark mt-1 pt-1">

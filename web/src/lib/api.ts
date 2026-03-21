@@ -206,3 +206,44 @@ export async function patchUser(
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
+
+export type MonitorConfig = {
+  monitor_id: string;
+  domain: string;
+  notify_email: string;
+  track_new_competitors: boolean;
+  active: boolean;
+  created_at: string;
+  next_run_at: string;
+};
+
+export async function createMonitor(
+  token: string,
+  domain: string,
+  notifyEmail: string,
+  trackNewCompetitors: boolean,
+): Promise<MonitorConfig> {
+  const res = await fetch(`${API_BASE}/api/monitors`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-token": token },
+    body: JSON.stringify({ domain, notify_email: notifyEmail, track_new_competitors: trackNewCompetitors }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function listMonitors(token: string): Promise<{ monitors: MonitorConfig[] }> {
+  const res = await fetch(`${API_BASE}/api/monitors`, {
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function deleteMonitor(token: string, monitorId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/monitors/${monitorId}`, {
+    method: "DELETE",
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+}

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { getRun, chatRun, getStoredToken, type RunStatus } from "@/lib/api";
+import { getRun, chatRun, getStoredToken, getMe, type RunStatus, type UserInfo } from "@/lib/api";
 import { Terminal } from "@/components/terminal";
 import { ReportModal } from "@/components/report-modal";
 import { FixDrawer } from "@/components/fix-drawer";
@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ChevronRight, Plus, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { PdfReportButton } from "@/components/PdfReportButton";
+import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
+import { UpgradeModal } from "@/components/billing/UpgradeModal";
+import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 function CircleProgress({ score, tone }: { score: number; tone: string }) {
   const r = 22;
   const cx = 28;
@@ -115,6 +118,10 @@ type Tab = "health" | "links" | "aigeo" | "passed";
 export default function RunPage({ params }: { params: Promise<{ runId: string }> }) {
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
+  const [showMonitor, setShowMonitor] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [activeDoc, setActiveDoc] = useState<"product" | "brand" | null>(null);
   const [fixItem, setFixItem] = useState<RunStatus["feed_items"][number] | null>(null);
@@ -144,6 +151,10 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
     const t = setInterval(refresh, 3000);
     return () => clearInterval(t);
   }, [refresh]);
+  useEffect(() => {
+    const token = getStoredToken();
+    if (token) getMe(token).then(setUser).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const msgs = run?.chat_messages ?? [];
@@ -192,11 +203,36 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
+      {showMonitor && (
+        <MonthlyMonitorModal
+          user={user}
+          onClose={() => setShowMonitor(false)}
+          onNeedSignup={() => setShowMonitor(false)}
+          onNeedUpgrade={() => { setShowMonitor(false); setShowUpgrade(true); }}
+          prefillDomain={run?.website_url ?? ""}
+        />
+      )}
+      {showUpgrade && user && (
+        <UpgradeModal token={user.token} onClose={() => setShowUpgrade(false)} />
+      )}
+
       {/* Dark zone — seamless with header, no border/rounding */}
       <div className="flex-shrink-0 bg-bb-phantom pb-4">
         <Terminal runId={runId} className="w-full" isComplete={!isLoading && run !== null} />
         <div className="flex items-center justify-between mt-2 px-4">
-          <PdfReportButton run={run} disabled={isLoading} />
+          <div className="flex items-center gap-2">
+            <PdfReportButton run={run} disabled={isLoading} />
+            <button
+              type="button"
+              onClick={() => setShowMonitor(true)}
+              disabled={isLoading || !run}
+              className="group inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold select-none transition-all duration-200 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/40 bg-violet-600/80 text-white hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
+              aria-label="Get monthly report"
+            >
+              <span className="relative flex-shrink-0">📅</span>
+              <span>Monthly Report</span>
+            </button>
+          </div>
           {run?.model_name && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white/60 text-[11px] font-mono">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400/80 flex-shrink-0" />
@@ -506,6 +542,10 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
       <ReportModal open={reportOpen} onOpenChange={setReportOpen} run={run} />
 
+      {showReleaseNotes && (
+        <ReleaseNotesModal onClose={() => setShowReleaseNotes(false)} />
+      )}
+
       <Dialog open={activeDoc === "product"} onOpenChange={(o) => !o && setActiveDoc(null)}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-auto bg-bb-cloud border-bb-steel/60">
           <DialogHeader>
@@ -535,6 +575,35 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Footer */}
+      <div className="flex flex-wrap items-center justify-center gap-4 py-3">
+        <button
+          onClick={() => setShowReleaseNotes(true)}
+          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
+        >
+          What&apos;s new in v1.1.0
+        </button>
+
+        <span className="text-bb-steel/20 text-xs">·</span>
+
+        <a
+          href="https://backboard.io"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-bb-steel/20 bg-white/60 hover:bg-bb-blue/5 hover:border-bb-blue/30 transition-all duration-300 active:scale-[0.97]"
+          aria-label="Built on Backboard.io"
+        >
+          <span className="w-4 h-4 rounded-sm bg-bb-blue flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200" aria-hidden>
+            <svg viewBox="0 0 16 16" fill="white" className="w-2.5 h-2.5">
+              <path d="M3 2h5.5a3 3 0 0 1 0 6H3V2zm0 8h6a3 3 0 0 1 0 6H3v-6z" />
+            </svg>
+          </span>
+          <span className="text-[11px] text-bb-steel/70 group-hover:text-bb-blue transition-colors duration-200 font-medium tracking-tight">
+            Built on <span className="text-bb-phantom group-hover:text-bb-blue transition-colors duration-200">Backboard.io</span>
+          </span>
+        </a>
+      </div>
     </div>
   );
 }

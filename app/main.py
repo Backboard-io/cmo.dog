@@ -25,6 +25,8 @@ from app.config import settings
 from app.routes.auth import router as auth_router
 from app.routes.billing import router as billing_router
 from app.routes.admin import router as admin_router
+from app.routes.monitors import router as monitors_router
+from app.services.monitor_scheduler import start_scheduler, stop_scheduler
 from app.services.user_service import find_user_by_token, increment_prompts
 from app.services.run_history_service import list_runs, get_run_detail
 from pydantic import BaseModel as PydanticBaseModel
@@ -34,7 +36,9 @@ from app.schemas import AnalyticsMetric, ChatMessage, FeedItem, RunCreate, RunRe
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 app = FastAPI(title="AI CMO Terminal API", lifespan=lifespan)
@@ -57,6 +61,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(billing_router)
 app.include_router(admin_router)
+app.include_router(monitors_router)
 
 
 @app.get("/health")
