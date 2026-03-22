@@ -49,6 +49,8 @@ async def save_run(run: RunStatus, user_id: str) -> None:
         "scores": scores,
         "issues_count": len(run.failed_checks),
         "passed_count": len(run.passed_checks),
+        "model_name": run.model_name,
+        "llm_provider": run.llm_provider,
     }
     await client.add_memory(
         assistant_id=aid,

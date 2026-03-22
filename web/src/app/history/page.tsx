@@ -162,6 +162,12 @@ function RunCard({ run, index, onClick }: { run: RunSummary; index: number; onCl
       ? "text-amber-600 bg-amber-50 border-amber-200"
       : "text-red-600 bg-red-50 border-red-200";
 
+  const modelLabel = run.model_name
+    ? run.model_name.includes("/")
+      ? run.model_name.split("/").pop()!
+      : run.model_name
+    : null;
+
   return (
     <button
       onClick={onClick}
@@ -185,6 +191,11 @@ function RunCard({ run, index, onClick }: { run: RunSummary; index: number; onCl
             {issuesLabel}
           </span>
           <span className="text-[10px] text-gray-400">{dateLabel}</span>
+          {modelLabel && (
+            <span className="text-[10px] text-bb-steel/70 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]" title={run.model_name}>
+              {modelLabel}
+            </span>
+          )}
         </div>
       </div>
 

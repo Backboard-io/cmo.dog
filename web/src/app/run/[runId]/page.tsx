@@ -8,7 +8,7 @@ import { ReportModal } from "@/components/report-modal";
 import { FixDrawer } from "@/components/fix-drawer";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronRight, Plus, Send } from "lucide-react";
+import { ChevronRight, Maximize2, Plus, Send } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { PdfReportButton } from "@/components/PdfReportButton";
 import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
@@ -174,6 +174,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const [activeSection, setActiveSection] = useState<"project" | "analytics" | "feed" | "chat" | null>("chat");
+  const [chatModalOpen, setChatModalOpen] = useState(false);
   const toggleSection = (s: "project" | "analytics" | "feed" | "chat") =>
     setActiveSection((prev) => (prev === s ? null : s));
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -597,20 +598,32 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
         {/* ── CHAT ── */}
         <div className="flex w-full shrink-0 flex-col min-h-0 lg:flex-none lg:overflow-hidden">
-          <SectionToggle
-            label={
-              <span className="flex items-center gap-2.5">
-                <span className="relative flex-shrink-0">
-                  <Image src="/onni.png" alt="" width={28} height={28} className="rounded-full object-cover" />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
-                </span>
-                Chat with Onni
-              </span>
-            }
-            open={activeSection === "chat"}
-            onToggle={() => toggleSection("chat")}
-            accent="bg-green-500"
-          />
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <SectionToggle
+                label={
+                  <span className="flex items-center gap-2.5">
+                    <span className="relative flex-shrink-0">
+                      <Image src="/onni.png" alt="" width={28} height={28} className="rounded-full object-cover" />
+                      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
+                    </span>
+                    Chat with Onni
+                  </span>
+                }
+                open={activeSection === "chat"}
+                onToggle={() => toggleSection("chat")}
+                accent="bg-green-500"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setChatModalOpen(true)}
+              className="lg:hidden flex-shrink-0 p-2.5 rounded-2xl border-2 border-bb-steel/20 bg-white shadow-sm hover:shadow-md hover:border-bb-steel/40 text-gray-400 hover:text-gray-600 transition-all"
+              title="Open chat in full view"
+            >
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          </div>
           <div className={`mt-2 flex max-lg:w-full flex-col ${activeSection === "chat" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden`}>
           <div className="flex min-h-0 flex-col rounded-xl border border-bb-steel/60 bg-white p-4 lg:flex-1">
             <div className="hidden lg:flex items-center gap-2 mb-3">
@@ -619,6 +632,14 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
               </div>
               <h3 className="text-sm font-semibold text-gray-700">Chat with Onni</h3>
+              <button
+                type="button"
+                onClick={() => setChatModalOpen(true)}
+                className="ml-auto p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                title="Open in larger view"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
             </div>
             {chatReady ? (
               <>
@@ -682,6 +703,74 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
       <ReportModal open={reportOpen} onOpenChange={setReportOpen} run={run} />
 
+      {/* Chat pop-out modal */}
+      <Dialog open={chatModalOpen} onOpenChange={setChatModalOpen}>
+        <DialogContent className="sm:max-w-2xl h-[80vh] flex flex-col bg-white border-bb-steel/60 p-0 gap-0">
+          <DialogHeader className="flex flex-row items-center gap-2 px-5 pt-5 pb-3 border-b border-bb-steel/20 flex-shrink-0">
+            <div className="relative flex-shrink-0">
+              <Image src="/onni.png" alt="Onni" width={32} height={32} className="rounded-full object-cover" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
+            </div>
+            <DialogTitle className="text-base font-semibold text-gray-800">Chat with Onni</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col flex-1 min-h-0 px-5 pb-5 pt-4">
+            {chatReady ? (
+              <>
+                <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 mb-4">
+                  {chatMessages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-lg px-3 py-2.5 text-sm ${
+                        msg.role === "assistant"
+                          ? "bg-bb-cloud text-gray-700"
+                          : "bg-bb-phantom text-bb-phantomLight ml-10"
+                      }`}
+                    >
+                      {msg.role === "assistant" ? (
+                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-gray-800 prose-strong:text-gray-800 text-gray-700">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        msg.content
+                      )}
+                    </div>
+                  ))}
+                  {chatSending && (
+                    <div className="rounded-lg px-3 py-2.5 text-sm bg-bb-cloud text-gray-700 w-fit">
+                      <span className="flex gap-1 items-center h-4">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "200ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "400ms" }} />
+                      </span>
+                    </div>
+                  )}
+                  <div ref={chatBottomRef} />
+                </div>
+                <form onSubmit={handleChat} className="flex gap-2 mt-auto flex-shrink-0">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask your AI CMO…"
+                    disabled={chatSending}
+                    className="flex-1 rounded-lg border border-bb-steel/60 bg-bb-cloud px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-bb-blue/20 disabled:opacity-50"
+                  />
+                  <Button type="submit" size="sm" disabled={chatSending || !chatInput.trim()} className="bg-bb-phantom text-white hover:bg-bb-phantom/90 px-4">
+                    <Send className="w-4 h-4" />
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <PawIcon className="w-12 h-12 text-bb-steel" />
+                <p className="text-sm font-semibold text-gray-600 mt-3">Loading Chat</p>
+                <p className="text-xs text-gray-500">Preparing AI assistant…</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {showReleaseNotes && (
         <ReleaseNotesModal onClose={() => setShowReleaseNotes(false)} />
       )}
@@ -722,7 +811,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.0.2
+          What&apos;s new in v2.1.1
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

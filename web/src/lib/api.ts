@@ -120,6 +120,8 @@ export type RunSummary = {
   scores: Record<string, number>;
   issues_count: number;
   passed_count: number;
+  model_name?: string;
+  llm_provider?: string;
 };
 
 export async function getRun(runId: string, token?: string | null): Promise<RunStatus> {

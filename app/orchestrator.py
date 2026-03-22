@@ -391,10 +391,10 @@ async def chat_reply(run_id: str, message: str) -> str:
         thread = await client.create_thread(assistant_id)
         _chat_threads[run_id] = str(thread.thread_id)
 
-    reply = (await _add_message_with_search(
+    reply = await _add_message_with_search(
         _chat_threads[run_id], message, plan=plan, memory="Auto",
         llm_provider=llm_provider, model_name=model_name,
-    ))[:1000]
+    )
 
     if not reply or reply.startswith("__backboard_error__:"):
         print(f"[chat_reply] empty or error reply for run {run_id}: {reply!r}")

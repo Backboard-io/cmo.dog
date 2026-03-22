@@ -9,9 +9,25 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.0.2",
+    version: "v2.1.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🤖", text: "History cards now show the model used for each analysis run" },
+      { emoji: "💬", text: "Chat replies are no longer truncated at 1000 chars — full answers from Onni" },
+      { emoji: "🔍", text: "Expand chat to full-screen modal on mobile via the new maximize button" },
+    ],
+  },
+  {
+    version: "v2.1.0",
+    date: "Mar 2026",
+    items: [
+      { emoji: "🔷", text: "Backboard.io footer badge — shared component, clearer border, logo chip, Next.js image" },
+    ],
+  },
+  {
+    version: "v2.0.2",
+    date: "Mar 2026",
     items: [
       { emoji: "🔷", text: "Backboard.io footer badge — shared component, clearer border, logo chip, Next.js image" },
     ],
