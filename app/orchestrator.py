@@ -150,34 +150,213 @@ from app.schemas import (
 )
 
 
-async def _prefetch_site_files(website_url: str) -> str:
-    """Fetch robots.txt and sitemap.xml from the target site and return as a labeled block."""
+_FETCH_HEADERS = {"User-Agent": "cmo.dog-audit/1.0"}
+
+
+async def _prefetch_site_data(website_url: str) -> tuple[str, str]:
+    """Fetch homepage HTML, robots.txt, and sitemap.xml in parallel.
+
+    Returns (verified_facts_block, raw_content_block) to inject into the audit prompt.
+    """
+    import time
     from urllib.parse import urlparse, urljoin
+
     parsed = urlparse(website_url)
     base = f"{parsed.scheme}://{parsed.netloc}"
 
-    async def _get(path: str) -> str:
+    async def _fetch(path: str) -> tuple[int, str, float]:
         url = urljoin(base, path)
+        t0 = time.monotonic()
         try:
-            async with httpx.AsyncClient(timeout=10, follow_redirects=True) as hx:
-                r = await hx.get(url, headers={"User-Agent": "cmo.dog-audit/1.0"})
-                if r.status_code == 200:
-                    text = r.text[:8000].strip()
-                    return f"=== {path} ===\n{text}" if text else f"=== {path} ===\n(empty)"
-                return f"=== {path} ===\n(HTTP {r.status_code} — not found)"
+            async with httpx.AsyncClient(timeout=15, follow_redirects=True) as hx:
+                r = await hx.get(url, headers=_FETCH_HEADERS)
+                return r.status_code, r.text[:10_000], (time.monotonic() - t0) * 1000
         except Exception as exc:
-            return f"=== {path} ===\n(fetch error: {exc})"
+            return 0, f"(fetch error: {exc})", (time.monotonic() - t0) * 1000
 
-    robots, sitemap = await asyncio.gather(_get("/robots.txt"), _get("/sitemap.xml"))
-    return f"\n\n{robots}\n\n{sitemap}"
+    (robots_status, robots_text, _), (sitemap_status, sitemap_text, _), (home_status, home_html, home_ms) = (
+        await asyncio.gather(_fetch("/robots.txt"), _fetch("/sitemap.xml"), _fetch("/"))
+    )
+
+    verified = _deterministic_checks(
+        website_url, home_html if home_status == 200 else "", home_ms,
+        robots_status, robots_text, sitemap_status, sitemap_text,
+    )
+
+    raw_parts: list[str] = []
+    if robots_status == 200:
+        raw_parts.append(f"=== /robots.txt ===\n{robots_text[:3000]}")
+    else:
+        raw_parts.append(f"=== /robots.txt ===\n(HTTP {robots_status} — not found)")
+
+    if sitemap_status == 200:
+        raw_parts.append(f"=== /sitemap.xml ===\n{sitemap_text[:3000]}")
+    else:
+        raw_parts.append(f"=== /sitemap.xml ===\n(HTTP {sitemap_status} — not found)")
+
+    if home_status == 200:
+        head_m = re.search(r"<head[^>]*>.*?</head>", home_html, re.DOTALL | re.IGNORECASE)
+        snippet = head_m.group(0)[:4000] if head_m else home_html[:2000]
+        raw_parts.append(f"=== Homepage <head> ===\n{snippet}")
+
+    return verified, "\n\n".join(raw_parts)
+
+
+def _deterministic_checks(
+    website_url: str,
+    home_html: str,
+    home_ms: float,
+    robots_status: int,
+    robots_text: str,
+    sitemap_status: int,
+    sitemap_text: str,
+) -> str:
+    """Return verified facts grounded in direct HTTP fetches — no LLM inference."""
+    lines: list[str] = [
+        "=== VERIFIED FACTS (direct HTTP fetch — treat as ground truth, do not contradict) ==="
+    ]
+
+    # HTTPS
+    if website_url.startswith("https://"):
+        lines.append("✓ HTTPS: Site URL uses HTTPS")
+    else:
+        lines.append("✗ HTTPS: Site URL does NOT use HTTPS — critical security issue")
+
+    # Homepage response time
+    if home_ms > 0:
+        ms = int(home_ms)
+        if ms < 800:
+            lines.append(f"✓ Response time: {ms}ms (fast)")
+        elif ms < 2000:
+            lines.append(f"~ Response time: {ms}ms (acceptable, aim for <800ms)")
+        else:
+            lines.append(f"✗ Response time: {ms}ms (slow — impacts Core Web Vitals)")
+
+    # robots.txt
+    if robots_status == 200:
+        lines.append("✓ robots.txt: Present (HTTP 200)")
+        has_sitemap_dir = bool(re.search(r"^Sitemap:", robots_text, re.MULTILINE | re.IGNORECASE))
+        blocks_all = bool(
+            re.search(r"User-agent:\s*\*", robots_text, re.IGNORECASE)
+            and re.search(r"^Disallow:\s*/\s*$", robots_text, re.MULTILINE)
+        )
+        lines.append("✓ robots.txt: Contains Sitemap directive" if has_sitemap_dir else "✗ robots.txt: No Sitemap directive")
+        if blocks_all:
+            lines.append("✗ robots.txt: Disallow: / blocks ALL crawlers — site will not be indexed")
+    else:
+        lines.append(f"✗ robots.txt: Missing (HTTP {robots_status})")
+
+    # sitemap.xml
+    if sitemap_status == 200:
+        url_count = len(re.findall(r"<url\b", sitemap_text, re.IGNORECASE))
+        lines.append(f"✓ sitemap.xml: Present (HTTP 200), {url_count} <url> entries")
+    else:
+        lines.append(f"✗ sitemap.xml: Missing (HTTP {sitemap_status})")
+
+    if not home_html:
+        lines.append("✗ Homepage HTML: Could not fetch — HTML checks skipped")
+        return "\n".join(lines)
+
+    # Page title
+    title_m = re.search(r"<title[^>]*>(.*?)</title>", home_html, re.DOTALL | re.IGNORECASE)
+    if title_m:
+        title = re.sub(r"\s+", " ", title_m.group(1)).strip()
+        tlen = len(title)
+        preview = f'"{title[:55]}"'
+        if 30 <= tlen <= 60:
+            lines.append(f'✓ Page title: {tlen} chars (good) — {preview}')
+        elif tlen < 30:
+            lines.append(f'✗ Page title: {tlen} chars — too short (ideal 30–60) — {preview}')
+        else:
+            lines.append(f'✗ Page title: {tlen} chars — too long (ideal 30–60) — {preview}')
+    else:
+        lines.append("✗ Page title: No <title> tag found")
+
+    # Meta description
+    desc_m = re.search(
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']*)["\']',
+        home_html, re.IGNORECASE,
+    ) or re.search(
+        r'<meta[^>]+content=["\']([^"\']*)["\'][^>]+name=["\']description["\']',
+        home_html, re.IGNORECASE,
+    )
+    if desc_m:
+        dlen = len(desc_m.group(1).strip())
+        if 120 <= dlen <= 160:
+            lines.append(f"✓ Meta description: {dlen} chars (good)")
+        elif dlen < 120:
+            lines.append(f"✗ Meta description: {dlen} chars — too short (ideal 120–160)")
+        else:
+            lines.append(f"✗ Meta description: {dlen} chars — too long (ideal 120–160)")
+    else:
+        lines.append("✗ Meta description: Missing")
+
+    # H1 count
+    h1_count = len(re.findall(r"<h1[\s>]", home_html, re.IGNORECASE))
+    if h1_count == 1:
+        lines.append("✓ H1: Exactly one H1 tag")
+    elif h1_count == 0:
+        lines.append("✗ H1: No H1 tag found on homepage")
+    else:
+        lines.append(f"✗ H1: {h1_count} H1 tags found (should be exactly 1)")
+
+    # Viewport
+    if re.search(r'<meta[^>]+name=["\']viewport["\']', home_html, re.IGNORECASE):
+        lines.append("✓ Viewport: Meta viewport present (mobile-friendly)")
+    else:
+        lines.append("✗ Viewport: Missing meta viewport tag — not mobile-friendly")
+
+    # Canonical
+    canonical_m = re.search(
+        r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']*)["\']',
+        home_html, re.IGNORECASE,
+    ) or re.search(
+        r'<link[^>]+href=["\']([^"\']*)["\'][^>]+rel=["\']canonical["\']',
+        home_html, re.IGNORECASE,
+    )
+    if canonical_m:
+        lines.append(f"✓ Canonical: Present — {canonical_m.group(1)[:80]}")
+    else:
+        lines.append('✗ Canonical: No <link rel="canonical"> found')
+
+    # Open Graph
+    og_title = bool(re.search(r'<meta[^>]+property=["\']og:title["\']', home_html, re.IGNORECASE))
+    og_desc = bool(re.search(r'<meta[^>]+property=["\']og:description["\']', home_html, re.IGNORECASE))
+    og_image = bool(re.search(r'<meta[^>]+property=["\']og:image["\']', home_html, re.IGNORECASE))
+    og_hits = sum([og_title, og_desc, og_image])
+    if og_hits == 3:
+        lines.append("✓ Open Graph: og:title, og:description, og:image all present")
+    elif og_hits > 0:
+        missing_og = [t for t, v in [("og:title", og_title), ("og:description", og_desc), ("og:image", og_image)] if not v]
+        lines.append(f"✗ Open Graph: Partial — missing {', '.join(missing_og)}")
+    else:
+        lines.append("✗ Open Graph: No OG tags found")
+
+    # Structured data
+    if re.search(r'<script[^>]+type=["\']application/ld\+json["\']', home_html, re.IGNORECASE):
+        lines.append("✓ Structured data: JSON-LD script found")
+    else:
+        lines.append("✗ Structured data: No JSON-LD found")
+
+    return "\n".join(lines)
 
 
 _AUDIT_PROMPT = """\
-Inspect provided content.  \
+Produce an SEO and technical audit for the site below.
 Your entire response MUST be a single raw JSON object — no markdown fences, \
-no prose before or after, no code blocks. Start your response with {{ and end with }}.
-{url}
-{site_files}
+no prose before or after, no code blocks. Start with {{ and end with }}.
+
+Target URL: {url}
+
+{verified_facts}
+
+{raw_content}
+
+IMPORTANT: The VERIFIED FACTS above came from direct HTTP fetches — they are ground truth. \
+Reflect them accurately in passed_checks / failed_checks. Add further checks for areas not \
+covered above: image alt text, internal/external link quality, Core Web Vitals estimate, \
+accessibility signals (ARIA, contrast, skip links), and any other SEO signals you can infer.
+
 Required JSON shape (all keys required):
 {{
   "performance_score": <int 0-100>,
@@ -195,9 +374,7 @@ Required JSON shape (all keys required):
   ]
 }}
 
-Score each dimension honestly based on what you find — scores must reflect the actual site, not generic \
-defaults. Cover: page title/meta, H1, image alts, HTTPS, mobile viewport, Core Web Vitals estimate, \
-structured data/schema, canonical tag, robots.txt, sitemap, internal/external links, accessibility basics.\
+Scores must reflect the actual findings — not generic defaults.\
 """
 
 
@@ -495,8 +672,8 @@ async def _run_audit_agent(
     await _emit(run_id, "Audit: Running website health checks…")
     thread = await client.create_thread(audit_id)
 
-    await _emit(run_id, "Audit: Fetching robots.txt and sitemap.xml…")
-    site_files = await _prefetch_site_files(website_url)
+    await _emit(run_id, "Audit: Fetching homepage, robots.txt and sitemap.xml…")
+    verified_facts, raw_content = await _prefetch_site_data(website_url)
 
     heartbeat_msgs = [
         "Audit: Checking meta tags and Open Graph…",
@@ -515,7 +692,7 @@ async def _run_audit_agent(
 
     heartbeat_task = asyncio.create_task(_heartbeat())
     try:
-        prompt = _AUDIT_PROMPT.format(url=website_url, site_files=site_files)
+        prompt = _AUDIT_PROMPT.format(url=website_url, verified_facts=verified_facts, raw_content=raw_content)
         audit_raw = await _add_message_with_search(
             str(thread.thread_id),
             prompt,

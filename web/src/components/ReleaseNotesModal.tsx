@@ -9,15 +9,14 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.2.1",
+    version: "v2.2.2",
     date: "Mar 2026",
     label: "Latest",
     items: [
-      { emoji: "🔁", text: "Retry audit — re-run website health checks on any existing run without re-analyzing" },
-      { emoji: "🖥️", text: "Terminal replays persisted history on run reload — no live stream needed" },
-      { emoji: "📋", text: "History page redesign with richer run cards and improved mobile layout" },
-      { emoji: "🏗️", text: "Audit agent extracted to dedicated async function with live heartbeat messages" },
-      { emoji: "🗄️", text: "RunStatus now persists terminal_log for full audit replay" },
+      { emoji: "🔍", text: "Audit prefetches robots.txt, sitemap.xml, and homepage HTML — deterministic checks, no LLM guessing" },
+      { emoji: "✅", text: "14 checks now run locally: HTTPS, response time, title/meta length, H1 count, viewport, canonical, Open Graph, JSON-LD, robots rules, sitemap URL count" },
+      { emoji: "📄", text: "Actual file contents (robots.txt, sitemap.xml, homepage <head>) injected into audit prompt as ground truth" },
+      { emoji: "🤖", text: "LLM focuses on image alts, link quality, Core Web Vitals estimates, and accessibility signals" },
     ],
   },
   {
