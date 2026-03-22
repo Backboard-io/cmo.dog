@@ -8,6 +8,8 @@ import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { SettingsModal, FREE_PROVIDER, FREE_MODEL } from "@/components/SettingsModal";
 import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowUpRight } from "lucide-react";
 
 const SETTINGS_PROVIDER_KEY = "cmodog_llm_provider";
 const SETTINGS_MODEL_KEY = "cmodog_model_name";
@@ -15,6 +17,7 @@ const PENDING_URL_KEY = "cmodog_pending_url";
 const GITHUB_REPO = "Backboard-io/cmo.dog";
 const GITHUB_URL = "https://github.com/Backboard-io/cmo.dog";
 const YOUTUBE_ID = "92brtM12mAs";
+const YOUTUBE_EMBED_SRC = `https://www.youtube.com/embed/${YOUTUBE_ID}?rel=0&modestbranding=1&playsinline=1`;
 
 function GearIcon({ className }: { className?: string }) {
   return (
@@ -122,6 +125,7 @@ function HomeInner() {
   const [showReleaseNotes, setShowReleaseNotes] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
+  const [demoVideoOpen, setDemoVideoOpen] = useState(false);
   const [llmProvider, setLlmProvider] = useState("openrouter");
   const [modelName, setModelName] = useState("openrouter/free");
 
@@ -261,20 +265,53 @@ function HomeInner() {
       <div className="w-full flex items-start justify-between px-6 pt-3 pb-1">
         <GitHubStars />
 
-        {/* Mini YouTube — top right corner */}
-        <div className="flex-shrink-0 w-28 sm:w-44 md:w-48">
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-bb-steel/10 hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-shadow duration-300">
+        {/* Mini YouTube — top right corner (absolute iframe fills aspect box so taps hit the player on mobile) */}
+        <div className="relative z-20 flex-shrink-0 w-28 sm:w-44 md:w-48 touch-manipulation">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-bb-steel/10 hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-shadow duration-300 isolate">
             <iframe
-              src={`https://www.youtube.com/embed/${YOUTUBE_ID}?rel=0&modestbranding=1`}
+              src={YOUTUBE_EMBED_SRC}
               title="CMO.dog — The World's First Free Open Source AI CMO"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
-              className="w-full h-full"
+              className="absolute inset-0 block h-full w-full border-0"
             />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDemoVideoOpen(true);
+              }}
+              className="absolute top-1.5 right-1.5 z-30 flex size-7 items-center justify-center rounded-full bg-bb-phantom/80 text-white shadow-md ring-1 ring-white/30 backdrop-blur-[2px] transition hover:bg-bb-phantom hover:ring-white/50 active:scale-95 touch-manipulation sm:size-8"
+              aria-label="Expand demo video"
+            >
+              <ArrowUpRight className="size-3.5 sm:size-4" aria-hidden />
+            </button>
           </div>
           <p className="mt-1.5 text-[10px] text-bb-steel/60 text-center font-medium tracking-wide">▶ Watch the demo</p>
         </div>
       </div>
+
+      <Dialog open={demoVideoOpen} onOpenChange={setDemoVideoOpen}>
+        <DialogContent
+          className="w-[min(100vw-1.5rem,56rem)] max-w-[calc(100%-1.5rem)] gap-3 p-3 sm:p-4 sm:max-w-5xl bg-bb-cloud border-bb-steel/60"
+          showCloseButton
+        >
+          <DialogHeader className="text-left space-y-0">
+            <DialogTitle className="text-base font-semibold text-bb-phantom pr-8">
+              CMO.dog demo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full aspect-video overflow-hidden rounded-xl ring-1 ring-bb-steel/15 shadow-lg isolate touch-manipulation">
+            <iframe
+              src={YOUTUBE_EMBED_SRC}
+              title="CMO.dog — The World's First Free Open Source AI CMO (expanded)"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="absolute inset-0 block h-full w-full border-0"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {showSignup && (
         <SignupModal
@@ -510,7 +547,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.0.0
+          What&apos;s new in v2.0.1
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

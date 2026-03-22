@@ -697,7 +697,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v1.1.0
+          What&apos;s new in v2.0.1
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

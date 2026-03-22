@@ -9,9 +9,19 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.0.0",
+    version: "v2.0.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "📱", text: "Run page mobile accordion — one section open at a time, full-width scroll stack (no overlap)" },
+      { emoji: "🖼️", text: "Clearer section borders and polish on mobile run toggles" },
+      { emoji: "🏠", text: "Landing mobile tweaks — GitHub badge, Analyze paw-only, YouTube sizing" },
+      { emoji: "👤", text: "Header user chip shows avatar-only on small screens" },
+    ],
+  },
+  {
+    version: "v2.0.0",
+    date: "Mar 2026",
     items: [
       { emoji: "📱", text: "Mobile-first home page — badges, user strip, and subtitle hidden on small screens" },
       { emoji: "🔘", text: "Full-width Analyze button below the domain input on mobile" },
