@@ -9,7 +9,7 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.2.0",
+    version: "v2.2.1",
     date: "Mar 2026",
     label: "Latest",
     items: [

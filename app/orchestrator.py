@@ -150,11 +150,34 @@ from app.schemas import (
 )
 
 
+async def _prefetch_site_files(website_url: str) -> str:
+    """Fetch robots.txt and sitemap.xml from the target site and return as a labeled block."""
+    from urllib.parse import urlparse, urljoin
+    parsed = urlparse(website_url)
+    base = f"{parsed.scheme}://{parsed.netloc}"
+
+    async def _get(path: str) -> str:
+        url = urljoin(base, path)
+        try:
+            async with httpx.AsyncClient(timeout=10, follow_redirects=True) as hx:
+                r = await hx.get(url, headers={"User-Agent": "cmo.dog-audit/1.0"})
+                if r.status_code == 200:
+                    text = r.text[:8000].strip()
+                    return f"=== {path} ===\n{text}" if text else f"=== {path} ===\n(empty)"
+                return f"=== {path} ===\n(HTTP {r.status_code} — not found)"
+        except Exception as exc:
+            return f"=== {path} ===\n(fetch error: {exc})"
+
+    robots, sitemap = await asyncio.gather(_get("/robots.txt"), _get("/sitemap.xml"))
+    return f"\n\n{robots}\n\n{sitemap}"
+
+
 _AUDIT_PROMPT = """\
 Inspect provided content.  \
 Your entire response MUST be a single raw JSON object — no markdown fences, \
 no prose before or after, no code blocks. Start your response with {{ and end with }}.
 {url}
+{site_files}
 Required JSON shape (all keys required):
 {{
   "performance_score": <int 0-100>,
@@ -472,10 +495,13 @@ async def _run_audit_agent(
     await _emit(run_id, "Audit: Running website health checks…")
     thread = await client.create_thread(audit_id)
 
+    await _emit(run_id, "Audit: Fetching robots.txt and sitemap.xml…")
+    site_files = await _prefetch_site_files(website_url)
+
     heartbeat_msgs = [
         "Audit: Checking meta tags and Open Graph…",
         "Audit: Evaluating Core Web Vitals…",
-        "Audit: Inspecting robots.txt and sitemap…",
+        "Audit: Analyzing robots.txt and sitemap structure…",
         "Audit: Reviewing structured data…",
         "Audit: Checking mobile-friendliness…",
         "Audit: Auditing accessibility signals…",
@@ -489,9 +515,10 @@ async def _run_audit_agent(
 
     heartbeat_task = asyncio.create_task(_heartbeat())
     try:
+        prompt = _AUDIT_PROMPT.format(url=website_url, site_files=site_files)
         audit_raw = await _add_message_with_search(
             str(thread.thread_id),
-            _AUDIT_PROMPT.format(url=website_url),
+            prompt,
             plan=plan,
             llm_provider=llm_provider,
             model_name=model_name,
@@ -499,7 +526,7 @@ async def _run_audit_agent(
         if not audit_raw:
             audit_raw = await _add_message_with_search(
                 str(thread.thread_id),
-                _AUDIT_PROMPT.format(url=website_url),
+                prompt,
                 plan=plan,
                 llm_provider="openai",
                 model_name="gpt-5.4",
