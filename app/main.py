@@ -27,6 +27,7 @@ from app.routes.billing import router as billing_router
 from app.routes.admin import router as admin_router
 from app.routes.monitors import router as monitors_router
 from app.services.monitor_scheduler import start_scheduler, stop_scheduler
+from app.services.intent_guard import check_intent, warmup as intent_guard_warmup
 from app.services.user_service import find_user_by_token, update_user
 from app.services.run_history_service import list_runs, get_run_detail
 from pydantic import BaseModel as PydanticBaseModel
@@ -37,6 +38,7 @@ from app.schemas import AnalyticsMetric, ChatMessage, FeedItem, RunCreate, RunRe
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_scheduler()
+    asyncio.create_task(intent_guard_warmup())
     yield
     stop_scheduler()
 
@@ -213,11 +215,27 @@ class ChatRequest(PydanticBaseModel):
     message: str
 
 
+_INTENT_REJECTION = (
+    "I'm Onni, your AI CMO. I can help with SEO, brand voice, competitor "
+    "analysis, and marketing strategy for this site — ask me anything along "
+    "those lines!"
+)
+
+
 @app.post("/api/runs/{run_id}/chat")
 async def chat(run_id: str, body: ChatRequest):
     run = orchestrator.get_run(run_id)
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
+
+    in_scope, score = await check_intent(body.message)
+    print(f"[intent_guard] run={run_id} score={score:.3f} in_scope={in_scope} msg={body.message[:60]!r}")
+
+    if not in_scope:
+        run.chat_messages.append(ChatMessage(role="user", content=body.message))
+        run.chat_messages.append(ChatMessage(role="assistant", content=_INTENT_REJECTION))
+        return {"messages": run.chat_messages}
+
     run.chat_messages.append(ChatMessage(role="user", content=body.message))
     try:
         reply = await orchestrator.chat_reply(run_id, body.message)

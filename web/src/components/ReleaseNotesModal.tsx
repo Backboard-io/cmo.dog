@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.2.2",
+    version: "v2.3.0",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🛡️", text: "Semantic intent guard — off-topic and jailbreak messages are rejected before reaching the LLM, zero cost" },
+      { emoji: "🧠", text: "all-MiniLM-L6-v2 embeddings model runs locally; cosine similarity against 65 curated CMO/marketing exemplars" },
+      { emoji: "⚡", text: "Model pre-loaded at startup — guard adds <15 ms latency on warm paths, no cold-start penalty for users" },
+    ],
+  },
+  {
+    version: "v2.2.2",
+    date: "Mar 2026",
     items: [
       { emoji: "🔍", text: "Audit prefetches robots.txt, sitemap.xml, and homepage HTML — deterministic checks, no LLM guessing" },
       { emoji: "✅", text: "14 checks now run locally: HTTPS, response time, title/meta length, H1 count, viewport, canonical, Open Graph, JSON-LD, robots rules, sitemap URL count" },
