@@ -79,7 +79,7 @@ function GitHubStars() {
         className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-bb-steel/25 bg-white/70 hover:bg-bb-phantom hover:border-bb-phantom hover:text-white hover:shadow-[0_4px_20px_rgba(0,0,0,0.15)] transition-all duration-300 active:scale-[0.97] text-sm text-bb-phantom font-semibold"
       >
         <GitHubIcon className="w-4 h-4" />
-        <span>View on GitHub</span>
+        <span className="hidden sm:inline">View on GitHub</span>
         {stars !== null && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 group-hover:bg-white/20 border border-amber-200 group-hover:border-white/30 text-amber-600 group-hover:text-white text-xs font-bold transition-all duration-300">
             <StarIcon className="w-3 h-3" />
@@ -262,7 +262,7 @@ function HomeInner() {
         <GitHubStars />
 
         {/* Mini YouTube — top right corner */}
-        <div className="flex-shrink-0 w-44 md:w-48">
+        <div className="flex-shrink-0 w-28 sm:w-44 md:w-48">
           <div className="relative w-full aspect-video rounded-xl overflow-hidden shadow-[0_8px_24px_rgba(0,0,0,0.12)] ring-1 ring-bb-steel/10 hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)] transition-shadow duration-300">
             <iframe
               src={`https://www.youtube.com/embed/${YOUTUBE_ID}?rel=0&modestbranding=1`}
@@ -355,7 +355,7 @@ function HomeInner() {
               One domain.
             </span>
           </h1>
-          <p className="text-base text-bb-steel max-w-sm mx-auto leading-relaxed">
+          <p className="hidden sm:block text-base text-bb-steel max-w-sm mx-auto leading-relaxed">
             Drop in your domain. Onni audits your site, maps competitors, and finds your brand voice — free, instantly.
           </p>
         </div>
@@ -382,33 +382,52 @@ function HomeInner() {
                 type="button"
                 onClick={() => setShowSettings(true)}
                 disabled={loading}
-                className="flex-shrink-0 text-bb-steel/40 hover:text-bb-phantom disabled:opacity-40 transition-colors p-2 rounded-xl hover:bg-bb-cloud"
+                className="hidden sm:flex flex-shrink-0 text-bb-steel/40 hover:text-bb-phantom disabled:opacity-40 transition-colors p-2 rounded-xl hover:bg-bb-cloud"
                 aria-label="Model settings"
                 title="Model settings"
               >
                 <GearIcon className="w-4 h-4" />
               </button>
+              {/* Inline submit — desktop only */}
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-shrink-0 rounded-xl bg-bb-phantom text-white px-6 py-3 m-1.5 text-sm font-bold disabled:opacity-70 transition-all hover:bg-bb-blue active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bb-phantom whitespace-nowrap"
+                className="hidden sm:flex flex-shrink-0 rounded-xl bg-bb-phantom text-white px-6 py-3 m-1.5 text-sm font-bold disabled:opacity-70 transition-all hover:bg-bb-blue active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bb-phantom whitespace-nowrap items-center gap-1.5"
                 aria-label={loading ? "Onni is working" : "Analyze my site"}
               >
-                <span className="flex items-center gap-1.5">
-                  {loading ? (
-                    <>
-                      <SpinnerIcon className="w-4 h-4 animate-spin" />
-                      <span className="hidden sm:inline">{quip}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Analyze</span>
-                      <span aria-hidden>🐾</span>
-                    </>
-                  )}
-                </span>
+                {loading ? (
+                  <>
+                    <SpinnerIcon className="w-4 h-4 animate-spin" />
+                    <span>Analyze</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Analyze</span>
+                    <span aria-hidden className="text-sm">🐾</span>
+                  </>
+                )}
               </button>
             </div>
+
+            {/* Full-width submit — mobile only */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="sm:hidden mt-2 w-full rounded-2xl bg-bb-phantom text-white py-4 text-base font-bold disabled:opacity-70 transition-all hover:bg-bb-blue active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bb-phantom flex items-center justify-center gap-2"
+              aria-label={loading ? "Onni is working" : "Analyze my site"}
+            >
+              {loading ? (
+                <>
+                  <SpinnerIcon className="w-5 h-5 animate-spin" />
+                  <span>{quip}</span>
+                </>
+              ) : (
+                <>
+                  <span>Analyze</span>
+                  <span aria-hidden className="text-base">🐾</span>
+                </>
+              )}
+            </button>
 
             {error && (
               <p className="mt-2 text-sm text-destructive text-center animate-in fade-in slide-in-from-top-1 duration-200">
@@ -421,7 +440,7 @@ function HomeInner() {
           </form>
 
           {/* User status strip */}
-          <div className="mt-3 flex items-center justify-between px-1 text-xs text-bb-steel/70">
+          <div className="mt-3 hidden sm:flex items-center justify-between px-1 text-xs text-bb-steel/70">
             {user ? (
               <>
                 <span className="truncate max-w-[160px]">{user.email}</span>
@@ -452,7 +471,7 @@ function HomeInner() {
 
         {/* Feature pills + monthly monitor CTA */}
         <div
-          className="flex flex-wrap justify-center gap-2 text-xs text-bb-steel"
+          className="hidden sm:flex flex-wrap justify-center gap-2 text-xs text-bb-steel"
           style={{ animation: "fadeUp 0.5s 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
         >
           {[
@@ -491,7 +510,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v1.2.0
+          What&apos;s new in v2.0.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

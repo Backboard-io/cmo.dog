@@ -103,6 +103,50 @@ const XCircle = ({ className }: { className?: string }) => (
   </svg>
 );
 
+function SectionToggle({
+  label,
+  badge,
+  open,
+  onToggle,
+  accent = "bg-bb-phantom",
+}: {
+  label: React.ReactNode;
+  badge?: React.ReactNode;
+  open: boolean;
+  onToggle: () => void;
+  accent?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`lg:hidden flex-shrink-0 flex items-center justify-between w-full px-4 py-3.5 rounded-2xl border-2 bg-white active:scale-[0.98] transition-all duration-200 ${
+        open
+          ? "border-bb-steel/40 shadow-md"
+          : "border-bb-steel/20 shadow-sm hover:shadow-md hover:border-bb-steel/40"
+      }`}
+    >
+      <span className="flex items-center gap-3 text-sm font-semibold text-gray-800">{label}</span>
+      <span className="flex items-center gap-2">
+        {badge && (
+          <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
+        )}
+        <span
+          className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200 ${
+            open ? `${accent} text-white shadow-sm` : "bg-gray-100 text-gray-400"
+          }`}
+        >
+          <ChevronRight
+            className={`w-3.5 h-3.5 transition-transform duration-300 ${open ? "rotate-90" : ""}`}
+          />
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function stripMarkdown(text: string): string {
   return text
     .replace(/#{1,6}\s*/g, "")
@@ -128,6 +172,9 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [activeTab, setActiveTab] = useState<Tab>("health");
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
+  const [activeSection, setActiveSection] = useState<"project" | "analytics" | "feed" | "chat" | null>("chat");
+  const toggleSection = (s: "project" | "analytics" | "feed" | "chat") =>
+    setActiveSection((prev) => (prev === s ? null : s));
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const prevMsgCountRef = useRef(0);
@@ -242,10 +289,24 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr_220px_320px] gap-5 flex-1 min-h-0 overflow-hidden px-6 py-5">
+      <div className="flex max-lg:pb-8 flex-col flex-1 min-h-0 gap-2 overflow-y-auto overflow-x-hidden lg:overflow-hidden lg:grid lg:grid-cols-[260px_1fr_220px_320px] lg:gap-5 px-4 lg:px-6 py-4 lg:py-5">
 
         {/* ── LEFT: company + docs + competitors ── */}
-        <div className="flex flex-col gap-4 overflow-auto">
+        <div className="flex w-full shrink-0 flex-col min-h-0 lg:flex-none lg:gap-4 lg:overflow-auto">
+          <SectionToggle
+            label={
+              <span className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-bb-phantom/10 flex items-center justify-center flex-shrink-0">
+                  <PawIcon className="w-4 h-4 text-bb-phantom" />
+                </span>
+                {run?.project_name || "Project"}
+              </span>
+            }
+            open={activeSection === "project"}
+            onToggle={() => toggleSection("project")}
+            accent="bg-bb-phantom"
+          />
+          <div className={`mt-2 flex max-lg:w-full flex-col gap-4 ${activeSection === "project" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-fit lg:flex-none lg:overflow-auto`}>
           <div className="rounded-xl border border-bb-steel/60 bg-white p-4">
             <div className="flex items-center gap-2 mb-2">
               <PawIcon className="w-6 h-6 text-bb-phantom" />
@@ -302,11 +363,32 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
               </Button>
             </div>
           </div>
+          </div>{/* end projectOpen content */}
         </div>
 
         {/* ── CENTER: analytics overview ── */}
-        <div className="flex flex-col gap-4 overflow-auto">
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4 flex flex-col flex-1 min-h-0">
+        <div className="flex w-full shrink-0 flex-col min-h-0 lg:flex-none lg:gap-4 lg:overflow-auto">
+          <SectionToggle
+            label={
+              <span className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-base leading-none">📊</span>
+                </span>
+                Analytics
+                {!isLoading && failedChecks.length > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
+                )}
+                {!isLoading && failedChecks.length === 0 && passedChecks.length > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
+                )}
+              </span>
+            }
+            open={activeSection === "analytics"}
+            onToggle={() => toggleSection("analytics")}
+            accent="bg-blue-500"
+          />
+          <div className={`mt-2 flex max-lg:w-full flex-col gap-4 ${activeSection === "analytics" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1`}>
+          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-white p-4 max-lg:min-h-0 lg:min-h-0 lg:flex-1">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-gray-700">Analytics Overview</h3>
               <div className="flex gap-1">
@@ -329,12 +411,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
             {activeTab === "health" && (
               isLoading ? (
-                <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
+                <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                   <PawIcon className="w-14 h-14 text-bb-steel animate-pulse" />
                   <p className="font-semibold text-gray-600 mt-3">Analyzing…</p>
                 </div>
               ) : (
-                <div className="space-y-5 overflow-auto flex-1">
+                <div className="space-y-5 max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
                   {/* Page Speed */}
                   {(run?.analytics_overview ?? []).length > 0 && (
                     <div>
@@ -387,7 +469,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             )}
 
             {activeTab === "passed" && (
-              <div className="overflow-auto flex-1">
+              <div className="max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
                 <p className="text-xs text-gray-500 mb-3">
                   Passed Checks ({passedChecks.length})
                 </p>
@@ -410,7 +492,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             )}
 
             {activeTab === "links" && (
-              <div className="overflow-auto flex-1">
+              <div className="max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
                 <p className="text-xs text-gray-500 mb-3">
                   Failed / Issues ({failedChecks.length})
                 </p>
@@ -433,22 +515,38 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             )}
 
             {activeTab === "aigeo" && (
-              <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
+              <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                 <p className="text-sm text-gray-500">AI/GEO analysis coming soon.</p>
               </div>
             )}
           </div>
+          </div>{/* end analyticsOpen content */}
         </div>
 
         {/* ── CMO FEED ── */}
-        <div className="flex flex-col overflow-auto">
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4 flex flex-col flex-1">
+        <div className="flex w-full shrink-0 flex-col min-h-0 lg:flex-none lg:overflow-auto">
+          <SectionToggle
+            label={
+              <span className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                  <span className="text-base leading-none">⚡</span>
+                </span>
+                AI CMO Feed
+              </span>
+            }
+            badge={`${feedItems.length} items`}
+            open={activeSection === "feed"}
+            onToggle={() => toggleSection("feed")}
+            accent="bg-violet-600"
+          />
+          <div className={`mt-2 flex max-lg:w-full flex-col ${activeSection === "feed" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1 lg:overflow-auto`}>
+          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-white p-4 max-lg:min-h-0 lg:flex-1">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700">AI CMO Feed</h3>
+              <h3 className="text-sm font-semibold text-gray-700 hidden lg:block">AI CMO Feed</h3>
               <span className="text-xs text-gray-500">{feedItems.length} items</span>
             </div>
             {feedItems.length ? (
-              <div className="space-y-2 overflow-auto flex-1">
+              <div className="space-y-2 max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
                 {feedItems.map((item) => (
                   <div key={item.id} className="rounded-lg border border-bb-steel/60 bg-bb-cloud/50 px-3 py-2 flex items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -467,7 +565,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                 ))}
               </div>
             ) : (!run || isLoading) ? (
-              <div className="flex flex-col items-center justify-center flex-1 text-center py-10">
+              <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                 <PawIcon className="w-12 h-12 text-bb-steel animate-pulse" />
                 <p className="text-sm font-semibold text-gray-600 mt-3">Researching…</p>
                 <p className="text-xs text-gray-500">Scanning for opportunities</p>
@@ -478,12 +576,28 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
               </p>
             )}
           </div>
+          </div>{/* end feedOpen content */}
         </div>
 
         {/* ── CHAT ── */}
-        <div className="flex flex-col overflow-hidden">
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4 flex flex-col flex-1 min-h-0">
-            <div className="flex items-center gap-2 mb-3">
+        <div className="flex w-full shrink-0 flex-col min-h-0 lg:flex-none lg:overflow-hidden">
+          <SectionToggle
+            label={
+              <span className="flex items-center gap-2.5">
+                <span className="relative flex-shrink-0">
+                  <Image src="/onni.png" alt="" width={28} height={28} className="rounded-full object-cover" />
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
+                </span>
+                Chat with Onni
+              </span>
+            }
+            open={activeSection === "chat"}
+            onToggle={() => toggleSection("chat")}
+            accent="bg-green-500"
+          />
+          <div className={`mt-2 flex max-lg:w-full flex-col ${activeSection === "chat" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden`}>
+          <div className="flex min-h-0 flex-col rounded-xl border border-bb-steel/60 bg-white p-4 lg:flex-1">
+            <div className="hidden lg:flex items-center gap-2 mb-3">
               <div className="relative flex-shrink-0">
                 <Image src="/onni.png" alt="Onni" width={28} height={28} className="rounded-full object-cover" />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
@@ -492,7 +606,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             </div>
             {chatReady ? (
               <>
-                <div ref={chatScrollRef} className="flex-1 overflow-auto space-y-2 mb-3">
+                <div ref={chatScrollRef} className="mb-3 max-h-[min(45vh,20rem)] space-y-2 overflow-y-auto lg:max-h-none lg:flex-1">
                   {chatMessages.map((msg, idx) => (
                     <div
                       key={idx}
@@ -528,13 +642,14 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                 </form>
               </>
             ) : (
-              <div className="flex flex-col items-center justify-center flex-1 text-center">
+              <div className="flex flex-col items-center justify-center py-8 text-center lg:flex-1">
                 <PawIcon className="w-12 h-12 text-bb-steel" />
                 <p className="text-sm font-semibold text-gray-600 mt-3">Loading Chat</p>
                 <p className="text-xs text-gray-500">Preparing AI assistant…</p>
               </div>
             )}
           </div>
+          </div>{/* end chatOpen content */}
         </div>
       </div>
 

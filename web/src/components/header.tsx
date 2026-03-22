@@ -90,9 +90,9 @@ export function Header({ user }: HeaderProps) {
             <div className="w-6 h-6 rounded-full bg-bb-blue/30 flex items-center justify-center text-xs font-medium text-white flex-shrink-0">
               {user.email.slice(0, 1).toUpperCase()}
             </div>
-            <span className="text-bb-phantomLight truncate max-w-[130px]">{user.email}</span>
+            <span className="hidden sm:inline text-bb-phantomLight truncate max-w-[130px]">{user.email}</span>
             {usageLabel && (
-              <span className={`font-medium flex-shrink-0 ${usageColor}`}>{usageLabel}</span>
+              <span className={`hidden sm:inline font-medium flex-shrink-0 ${usageColor}`}>{usageLabel}</span>
             )}
             <svg
               className={`w-3.5 h-3.5 text-bb-steel flex-shrink-0 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
