@@ -9,9 +9,17 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.3.0",
+    version: "v2.3.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🪶", text: "Swapped sentence-transformers → fastembed (ONNX Runtime) — Docker image ~1 GB lighter, no PyTorch dependency" },
+      { emoji: "🐳", text: "Intent guard model baked into Docker image at build time — zero network download on container startup" },
+    ],
+  },
+  {
+    version: "v2.3.0",
+    date: "Mar 2026",
     items: [
       { emoji: "🛡️", text: "Semantic intent guard — off-topic and jailbreak messages are rejected before reaching the LLM, zero cost" },
       { emoji: "🧠", text: "all-MiniLM-L6-v2 embeddings model runs locally; cosine similarity against 65 curated CMO/marketing exemplars" },

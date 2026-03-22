@@ -1,11 +1,14 @@
 """Semantic intent guard — rejects chat messages outside CMO/marketing scope.
 
-Uses sentence-transformers (all-MiniLM-L6-v2, ~80 MB) to embed the incoming
-message and compute cosine similarity against a curated corpus of valid Onni
-queries. Messages scoring below THRESHOLD are rejected before the LLM is
-ever called — zero Backboard cost, <15 ms latency after warm-up.
+Uses fastembed (all-MiniLM-L6-v2 via ONNX Runtime, ~90 MB) to embed the
+incoming message and compute cosine similarity against a curated corpus of
+valid Onni queries. Messages scoring below THRESHOLD are rejected before the
+LLM is ever called — zero Backboard cost, <15 ms latency after warm-up.
 
-The model is loaded lazily and only once (process lifetime). The exemplar
+fastembed uses ONNX Runtime instead of PyTorch, keeping the Docker image
+~1 GB lighter than sentence-transformers.
+
+The model is loaded lazily and only once (process lifetime). Exemplar
 embeddings are pre-computed at load time.
 """
 
@@ -14,6 +17,8 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Optional
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
@@ -72,18 +77,13 @@ _EXEMPLARS: list[str] = [
     "What is my target audience?",
     "How do I improve my email marketing?",
     "What social media strategy fits my brand?",
-    # report questions
+    # Report & score queries
     "What is my SEO score?",
     "What is my accessibility score?",
     "What is my best practices score?",
-    "What is my SEO score?",
-    "What is my accessibility score?",
-    "What is my best practices score?",
-    "What is my SEO score?",
-    "What is my accessibility score?",
-    "Show me my report."
-    "what is my report?"
-    "how does myaudit look?"
+    "Show me my report.",
+    "What is my report?",
+    "How does my audit look?",
 ]
 
 # Cosine similarity threshold (0–1). Raise to tighten, lower to loosen.
@@ -91,11 +91,13 @@ _EXEMPLARS: list[str] = [
 # off-topic messages (poetry, coding, recipes, etc.) score <0.30.
 _THRESHOLD: float = 0.40
 
+_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+
 # ---------------------------------------------------------------------------
 # Module-level cache — loaded once per process
 # ---------------------------------------------------------------------------
 _model: Optional[object] = None
-_exemplar_embeddings: Optional[object] = None
+_exemplar_embeddings: Optional[np.ndarray] = None
 _load_lock: Optional[asyncio.Lock] = None
 
 
@@ -112,11 +114,11 @@ def _load_sync() -> tuple:
     if _model is not None:
         return _model, _exemplar_embeddings
 
-    from sentence_transformers import SentenceTransformer  # type: ignore
+    from fastembed import TextEmbedding  # type: ignore
 
-    logger.info("[intent_guard] Loading all-MiniLM-L6-v2…")
-    m = SentenceTransformer("all-MiniLM-L6-v2")
-    emb = m.encode(_EXEMPLARS, normalize_embeddings=True, convert_to_numpy=True)
+    logger.info("[intent_guard] Loading %s via fastembed…", _MODEL_NAME)
+    m = TextEmbedding(_MODEL_NAME)
+    emb = np.array(list(m.embed(_EXEMPLARS)))  # shape (N, 384), already L2-normalised
     _model = m
     _exemplar_embeddings = emb
     logger.info("[intent_guard] Model ready, %d exemplars embedded", len(_EXEMPLARS))
@@ -151,11 +153,9 @@ async def check_intent(message: str) -> tuple[bool, float]:
     loop = asyncio.get_running_loop()
 
     def _score() -> float:
-        msg_emb = model.encode(
-            [message], normalize_embeddings=True, convert_to_numpy=True
-        )
+        msg_emb = np.array(list(model.embed([message])))[0]  # shape (384,), L2-normalised
         # Dot product of L2-normalised vectors == cosine similarity
-        sims = (exemplar_emb @ msg_emb.T).flatten()
+        sims = exemplar_emb @ msg_emb
         return float(sims.max())
 
     best = await loop.run_in_executor(None, _score)

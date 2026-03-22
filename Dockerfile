@@ -11,7 +11,8 @@ ENV PYTHONPATH=/app/
 
 # Install Python dependencies first for better layer caching.
 COPY pyproject.toml README.md ./
-RUN pip install --upgrade pip && pip install -e .
+RUN pip install --upgrade pip && pip install -e . && \
+    python -c "from fastembed import TextEmbedding; TextEmbedding('sentence-transformers/all-MiniLM-L6-v2')"
 
 # Copy API source.
 COPY app/ ./app
