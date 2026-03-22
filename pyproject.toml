@@ -1,5 +1,5 @@
 [project]
-name = "backboard-cmo"
+name = "cmo-dog"
 version = "2.0.0"
 description = "AI CMO Terminal — Backboard agents for traffic and users"
 requires-python = ">=3.11"
