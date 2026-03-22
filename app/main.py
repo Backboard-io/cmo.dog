@@ -27,7 +27,7 @@ from app.routes.billing import router as billing_router
 from app.routes.admin import router as admin_router
 from app.routes.monitors import router as monitors_router
 from app.services.monitor_scheduler import start_scheduler, stop_scheduler
-from app.services.user_service import find_user_by_token, increment_prompts
+from app.services.user_service import find_user_by_token, update_user
 from app.services.run_history_service import list_runs, get_run_detail
 from pydantic import BaseModel as PydanticBaseModel
 
@@ -92,11 +92,12 @@ async def create_run(body: RunCreate, x_user_token: str = Header(None)):
             },
         )
 
-    # Deduct token before the run starts — no matter what happens next
+    # Use the already-read prompts_used to avoid a stale re-read from Backboard
     try:
-        await increment_prompts(user["user_id"])
+        await update_user(user["user_id"], prompts_used=prompts_used + 1)
+        print(f"[billing] Incremented prompts for {user['user_id']}: {prompts_used} -> {prompts_used + 1}")
     except Exception as e:
-        print(f"[billing] WARN: increment_prompts failed for {user['user_id']}: {e}")
+        print(f"[billing] WARN: prompts increment failed for {user['user_id']}: {e}")
 
     run_id = uuid.uuid4().hex[:12]
     orchestrator._runs[run_id] = RunStatus(
@@ -203,7 +204,13 @@ async def chat(run_id: str, body: ChatRequest):
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
     run.chat_messages.append(ChatMessage(role="user", content=body.message))
-    reply = await orchestrator.chat_reply(run_id, body.message)
+    try:
+        reply = await orchestrator.chat_reply(run_id, body.message)
+    except Exception as exc:
+        # Remove the user message we optimistically appended so state stays clean
+        run.chat_messages.pop()
+        print(f"[chat] chat_reply failed for run {run_id}: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
     run.chat_messages.append(ChatMessage(role="assistant", content=reply))
     return {"messages": run.chat_messages}
 

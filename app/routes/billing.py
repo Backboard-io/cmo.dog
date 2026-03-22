@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header, HTTPException, Request
 
 from app.config import settings
 from app.services.user_service import (
+    find_user_by_email,
     find_user_by_id,
     find_user_by_stripe_customer_id,
     find_user_by_token,
@@ -115,16 +116,31 @@ async def stripe_webhook(request: Request):
         user_id = data_obj.get("client_reference_id")
         subscription_id = data_obj.get("subscription")
         customer_id = data_obj.get("customer")
+        customer_email = data_obj.get("customer_details", {}).get("email") or data_obj.get("customer_email")
+
+        print(f"[billing] checkout.session.completed: user_id={user_id} customer_id={customer_id} email={customer_email} sub={subscription_id}")
+
+        user = None
         if user_id:
             user = await find_user_by_id(user_id)
+            if not user:
+                print(f"[billing] WARN: find_user_by_id({user_id}) returned None — trying email fallback")
+
+        if not user and customer_email:
+            user = await find_user_by_email(customer_email)
             if user:
-                await update_user(
-                    user_id,
-                    plan="paid",
-                    stripe_customer_id=customer_id or "",
-                    stripe_subscription_id=subscription_id or "",
-                )
-                print(f"[billing] User {user_id} upgraded to paid plan")
+                print(f"[billing] Found user via email fallback: {customer_email} -> {user.get('user_id')}")
+            else:
+                print(f"[billing] ERROR: Could not find user by id={user_id} or email={customer_email}")
+
+        if user:
+            await update_user(
+                user["user_id"],
+                plan="paid",
+                stripe_customer_id=customer_id or "",
+                stripe_subscription_id=subscription_id or "",
+            )
+            print(f"[billing] User {user['user_id']} ({user.get('email')}) upgraded to paid plan")
 
     elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
         status = data_obj.get("status", "")
@@ -136,3 +152,51 @@ async def stripe_webhook(request: Request):
                 print(f"[billing] Reverted {customer_id} to free plan ({status})")
 
     return {"received": True}
+
+
+@router.post("/api/billing/sync")
+async def sync_subscription(x_user_token: str = Header(None)):
+    """Manually sync Stripe subscription status to the user record.
+
+    Call this from the success page or support flow when a user paid but
+    their plan wasn't upgraded (e.g. webhook missed or user lookup failed).
+    """
+    if not x_user_token:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    user = await find_user_by_token(x_user_token)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    customer_id = user.get("stripe_customer_id", "")
+
+    if not customer_id:
+        try:
+            customers = stripe.Customer.search(query=f"email:'{user['email']}'", limit=1)
+            if customers.data:
+                customer_id = customers.data[0].id
+                await update_user(user["user_id"], stripe_customer_id=customer_id)
+                print(f"[billing/sync] Found Stripe customer by email: {customer_id}")
+        except Exception as e:
+            print(f"[billing/sync] Customer search failed: {e}")
+
+    if not customer_id:
+        return {"synced": False, "reason": "no_stripe_customer", "plan": user.get("plan", "free")}
+
+    try:
+        subscriptions = stripe.Subscription.list(customer=customer_id, status="active", limit=1)
+        if subscriptions.data:
+            sub = subscriptions.data[0]
+            await update_user(
+                user["user_id"],
+                plan="paid",
+                stripe_customer_id=customer_id,
+                stripe_subscription_id=sub.id,
+            )
+            print(f"[billing/sync] Synced {user['email']} to paid (sub={sub.id})")
+            return {"synced": True, "plan": "paid", "subscription_id": sub.id}
+        else:
+            print(f"[billing/sync] No active subscription for {customer_id}")
+            return {"synced": False, "reason": "no_active_subscription", "plan": user.get("plan", "free")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -173,6 +173,15 @@ export async function createBillingPortal(token: string): Promise<{ url: string 
   return res.json();
 }
 
+export async function syncSubscription(token: string): Promise<{ synced: boolean; plan: string }> {
+  const res = await fetch(`${API_BASE}/api/billing/sync`, {
+    method: "POST",
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export type AdminUser = {
   user_id: string;
   email: string;

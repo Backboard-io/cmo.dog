@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createRun, getMe, getStoredToken, storeToken, clearToken, UserInfo } from "@/lib/api";
+import { createRun, getMe, getStoredToken, storeToken, clearToken, syncSubscription, UserInfo } from "@/lib/api";
 import { SignupModal } from "@/components/auth/SignupModal";
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
@@ -181,8 +181,19 @@ function HomeInner() {
     const checkout = searchParams.get("checkout");
     if (checkout === "success") {
       setCheckoutSuccess(true);
-      if (token) setTimeout(() => refreshUser(token), 1500);
       router.replace("/");
+      if (token) {
+        // Give the webhook a moment, then sync directly from Stripe to self-heal
+        // any case where the webhook missed or the user lookup failed.
+        setTimeout(async () => {
+          try {
+            await syncSubscription(token);
+          } catch (e) {
+            console.warn("[billing] sync failed:", e);
+          }
+          await refreshUser(token);
+        }, 2000);
+      }
     }
 
     const authError = searchParams.get("auth_error");
@@ -548,7 +559,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.0.2
+          What&apos;s new in v2.1.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

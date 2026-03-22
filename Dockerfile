@@ -16,6 +16,7 @@ RUN pip install --upgrade pip && pip install -e .
 # Copy API source.
 COPY app/ ./app
 COPY web /app/web
+COPY model_list.csv /app/model_list.csv
 
 EXPOSE 8000
 EXPOSE 9000

@@ -14,7 +14,7 @@ _BACKBOARD_BASE = "https://app.backboard.io/api"
 
 
 _DEFAULT_PROVIDER = "openrouter"
-_DEFAULT_MODEL = "anthropic/claude-sonnet-4-5"
+_DEFAULT_MODEL = "openrouter/free"
 
 
 def _model_params(
@@ -124,6 +124,12 @@ async def _add_message_with_search(
                             if len(snippet) > 15:
                                 await _emit(stream_to_run, f"{agent_label}: {snippet}")
                         buf = ""
+
+                    elif event_type in ("error", "run_failed"):
+                        err_msg = evt.get("error") or evt.get("message") or json.dumps(evt)
+                        print(f"[backboard] {event_type} from stream ({agent_label or 'chat'}): {err_msg}")
+                        final_body = f"__backboard_error__: {err_msg}"
+
             except httpx.RemoteProtocolError as exc:
                 print(f"[{agent_label or 'agent'}] stream error: {exc}")
                 if stream_to_run and agent_label:
@@ -145,11 +151,29 @@ from app.schemas import (
 
 
 _AUDIT_PROMPT = """\
-Search {url}. Output ONLY raw JSON (no fences, no prose). Keys: performance_score, accessibility_score, \
-best_practices_score, seo_score (ints 0-100); summary (≤3 sentences); passed_checks; failed_checks. \
-Check object: name, description, value (≤20 chars). failed_checks also: priority (critical|high|medium), \
-how_to_fix (non-empty numbered steps). Split every finding into passed_checks or failed_checks. Cover: \
-meta, H1, alts, HTTPS, mobile, CWV estimate, schema, canonical, robots, sitemap, links, a11y basics.\
+Search and inspect {url}. Your entire response MUST be a single raw JSON object — no markdown fences, \
+no prose before or after, no code blocks. Start your response with {{ and end with }}.
+
+Required JSON shape (all keys required):
+{{
+  "performance_score": <int 0-100>,
+  "accessibility_score": <int 0-100>,
+  "best_practices_score": <int 0-100>,
+  "seo_score": <int 0-100>,
+  "summary": "<≤3 sentences>",
+  "passed_checks": [
+    {{"name": "<string>", "description": "<string>", "value": "<≤20 chars>"}}
+  ],
+  "failed_checks": [
+    {{"name": "<string>", "description": "<string>", "value": "<≤20 chars>",
+      "priority": "critical|high|medium",
+      "how_to_fix": "<non-empty numbered steps>"}}
+  ]
+}}
+
+Score each dimension honestly based on what you find — scores must reflect the actual site, not generic \
+defaults. Cover: page title/meta, H1, image alts, HTTPS, mobile viewport, Core Web Vitals estimate, \
+structured data/schema, canonical tag, robots.txt, sitemap, internal/external links, accessibility basics.\
 """
 
 
@@ -336,6 +360,8 @@ def get_run(run_id: str) -> Optional[RunStatus]:
 
 _run_plans: dict[str, str] = {}
 _run_users: dict[str, str] = {}
+_run_llm_providers: dict[str, str] = {}
+_run_model_names: dict[str, str] = {}
 
 
 async def _store_agent_memory(run_id: str, content: str, label: str) -> None:
@@ -357,15 +383,24 @@ async def chat_reply(run_id: str, message: str) -> str:
     """Send a chat message for this run and return the assistant reply."""
     client = _get_client()
     plan = _run_plans.get(run_id, "free")
+    llm_provider = _run_llm_providers.get(run_id)
+    model_name = _run_model_names.get(run_id)
     assistant_id = _run_user_assistants.get(run_id) or _assistant_id("BACKBOARD_ASSISTANT_AUDIT")
 
     if run_id not in _chat_threads:
         thread = await client.create_thread(assistant_id)
         _chat_threads[run_id] = str(thread.thread_id)
 
-    return (await _add_message_with_search(
-        _chat_threads[run_id], message, plan=plan, memory="Auto"
+    reply = (await _add_message_with_search(
+        _chat_threads[run_id], message, plan=plan, memory="Auto",
+        llm_provider=llm_provider, model_name=model_name,
     ))[:1000]
+
+    if not reply or reply.startswith("__backboard_error__:"):
+        print(f"[chat_reply] empty or error reply for run {run_id}: {reply!r}")
+        raise RuntimeError(f"Backboard returned no reply: {reply!r}")
+
+    return reply
 
 
 def get_terminal_lines(run_id: str) -> list[str]:
@@ -446,6 +481,8 @@ async def run_orchestrator(
         return
 
     _run_plans[run_id] = plan
+    _run_llm_providers[run_id] = llm_provider or _DEFAULT_PROVIDER
+    _run_model_names[run_id] = model_name or _DEFAULT_MODEL
     if user_id:
         _run_users[run_id] = user_id
         try:
@@ -640,7 +677,8 @@ async def run_orchestrator(
                 )
                 await _store_agent_memory(run_id, audit_memory, "audit")
                 await _emit(run_id, f"✓ Audit: Found {len(failed)} SEO opportunities (score: {seo}/100)")
-            except Exception:
+            except Exception as e:
+                print(f"[audit] JSON parse failed: {e}\nRaw ({len(audit_raw)} chars): {audit_raw[:800]!r}")
                 run.audit_summary = audit_raw[:1500]
 
     # ── Launch all four concurrently ──────────────────────────────────────────

@@ -228,10 +228,25 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
     if (!msg || !runId || chatSending) return;
     setChatInput("");
     setChatSending(true);
+    // Optimistically show the user message immediately
+    setRun((prev) => prev ? {
+      ...prev,
+      chat_messages: [...prev.chat_messages, { role: "user", content: msg }],
+    } : prev);
     try {
       const { messages } = await chatRun(runId, msg);
       prevMsgCountRef.current = 0; // force scroll on next update
       setRun((prev) => prev ? { ...prev, chat_messages: messages } : prev);
+    } catch {
+      // Restore input and append an error bubble so the user knows what happened
+      setChatInput(msg);
+      setRun((prev) => prev ? {
+        ...prev,
+        chat_messages: [
+          ...prev.chat_messages.filter((m) => !(m.role === "user" && m.content === msg)),
+          { role: "assistant", content: "Sorry, I couldn't reach Onni right now. Please try again." },
+        ],
+      } : prev);
     } finally {
       setChatSending(false);
     }
@@ -626,6 +641,15 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                       )}
                     </div>
                   ))}
+                  {chatSending && (
+                    <div className="rounded-lg px-3 py-2.5 text-sm bg-bb-cloud text-gray-700 w-fit">
+                      <span className="flex gap-1 items-center h-4">
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "0ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "200ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "400ms" }} />
+                      </span>
+                    </div>
+                  )}
                   <div ref={chatBottomRef} />
                 </div>
                 <form onSubmit={handleChat} className="flex gap-2 mt-auto">
