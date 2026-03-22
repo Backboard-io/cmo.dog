@@ -9,9 +9,19 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v1.0.1",
+    version: "v2.0.0",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "📱", text: "Mobile-first home page — badges, user strip, and subtitle hidden on small screens" },
+      { emoji: "🔘", text: "Full-width Analyze button below the domain input on mobile" },
+      { emoji: "📋", text: "Collapsible sections on the run results page for compact mobile viewing" },
+      { emoji: "🙈", text: "Header email and usage label hidden on mobile to reduce clutter" },
+    ],
+  },
+  {
+    version: "v1.0.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🐾", text: "Refined paw-print favicon — bolder, more balanced toes" },
     ],
