@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.config import settings
-from app.services.user_service import _all_user_memories, find_user_by_token, update_user
+from app.services.user_service import _all_user_memories, find_user_by_token, update_user, delete_user
 
 router = APIRouter()
 
@@ -36,6 +36,10 @@ class PatchUserRequest(BaseModel):
     prompts_used: Optional[int] = None
 
 
+class BulkDeleteRequest(BaseModel):
+    user_ids: list[str]
+
+
 @router.get("/api/admin/users")
 async def list_users(x_user_token: str = Header(None)):
     await _require_admin(x_user_token)
@@ -53,3 +57,23 @@ async def patch_user(user_id: str, body: PatchUserRequest, x_user_token: str = H
     if not updated:
         raise HTTPException(status_code=404, detail="User not found")
     return _safe_user(updated)
+
+
+@router.delete("/api/admin/users/{user_id}", status_code=204)
+async def delete_user_route(user_id: str, x_user_token: str = Header(None)):
+    await _require_admin(x_user_token)
+    deleted = await delete_user(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+
+
+@router.post("/api/admin/users/bulk-delete")
+async def bulk_delete_users(body: BulkDeleteRequest, x_user_token: str = Header(None)):
+    await _require_admin(x_user_token)
+    import asyncio
+    results = await asyncio.gather(
+        *[delete_user(uid) for uid in body.user_ids],
+        return_exceptions=True,
+    )
+    deleted = sum(1 for r in results if r is True)
+    return {"deleted": deleted, "requested": len(body.user_ids)}

@@ -103,7 +103,12 @@ variable "ssm_secret_arns" {
 variable "custom_domain" {
   type        = string
   description = "Custom domain to associate with the App Runner service. Leave empty to skip."
-  default     = ""
+}
+
+variable "custom_domain_2" {
+  type        = string
+  description = "Custom domain to associate with the App Runner service. Leave empty to skip."
+
 }
 
 variable "log_retention_days" {

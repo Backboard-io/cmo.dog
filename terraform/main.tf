@@ -31,7 +31,8 @@ locals {
     API_BASE_URL             = var.api_base_url
     API_INTERNAL_URL         = "http://127.0.0.1:9000"
     NEXT_PUBLIC_API_BASE_URL = var.next_public_api_base_url
-
+    DOMAIN_HOST = var.domain_host
+    DOMAIN_CLIENT = var.domain_client
     # Auth
     AUTH_MODE         = var.auth_mode
     APP_JWT_NAMESPACE = var.app_jwt_namespace
@@ -46,6 +47,11 @@ locals {
     BACKBOARD_LLM_PROVIDER  = var.backboard_llm_provider
     BACKBOARD_MODEL_NAME    = var.backboard_model_name
     BACKBOARD_MEMORY_MODE   = var.backboard_memory_mode
+    BACKBOARD_ASSISTANT_COMPETITOR = var.backboard_assistant_competitor
+    BACKBOARD_ASSISTANT_BRAND = var.backboard_assistant_brand
+    BACKBOARD_ASSISTANT_AUDIT = var.backboard_assistant_audit
+    BACKBOARD_ASSISTANT_STORAGE = var.backboard_assistant_storage
+    BACKBOARD_ASSISTANT_CONTENT = var.backboard_assistant_content
 
     # Python backend domain settings (used for OAuth redirect URIs)
     DOMAIN_SERVER = var.api_base_url
@@ -113,6 +119,7 @@ module "apprunner" {
 
 
   custom_domain      = var.custom_domain
+  custom_domain_2    = var.custom_domain_2
   log_retention_days = var.log_retention_days
   alarm_email        = var.alarm_email
 }

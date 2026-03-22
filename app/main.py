@@ -52,6 +52,8 @@ app.add_middleware(
         "http://127.0.0.1:9000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "https://cmo.dog",
+        "https://www.cmo.dog",
     ],
     allow_credentials=True,
     allow_methods=["*"],

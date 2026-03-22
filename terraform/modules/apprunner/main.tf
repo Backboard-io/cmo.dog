@@ -125,6 +125,13 @@ resource "aws_apprunner_custom_domain_association" "this" {
   enable_www_subdomain = false
 }
 
+resource "aws_apprunner_custom_domain_association" "domain_2" {
+  count                = var.custom_domain_2 != "" ? 1 : 0
+  domain_name          = var.custom_domain_2
+  service_arn          = aws_apprunner_service.this.arn
+  enable_www_subdomain = false
+}
+
 # --- CloudWatch: Log retention ---
 
 resource "aws_cloudwatch_log_group" "application" {

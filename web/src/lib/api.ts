@@ -207,6 +207,16 @@ export async function patchUser(
   return res.json();
 }
 
+export async function bulkDeleteUsers(token: string, userIds: string[]): Promise<{ deleted: number }> {
+  const res = await fetch(`${API_BASE}/api/admin/users/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-token": token },
+    body: JSON.stringify({ user_ids: userIds }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export type MonitorConfig = {
   monitor_id: string;
   domain: string;

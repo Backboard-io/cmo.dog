@@ -197,6 +197,36 @@ variable "backboard_memory_mode" {
   default     = "On"
 }
 
+variable "backboard_assistant_competitor" {
+  type        = string
+  description = "Backboard assistant competitor (BACKBOARD_ASSISTANT_COMPETITOR)."
+
+}
+
+variable "backboard_assistant_brand" {
+  type        = string
+  description = "Backboard assistant brand (BACKBOARD_ASSISTANT_BRAND)."
+
+}
+
+variable "backboard_assistant_audit" {
+  type        = string
+  description = "Backboard assistant audit (BACKBOARD_ASSISTANT_AUDIT)."
+
+}
+
+variable "backboard_assistant_storage" {
+  type        = string
+  description = "Backboard assistant storage (BACKBOARD_ASSISTANT_STORAGE)."
+
+}
+
+variable "backboard_assistant_content" {
+  type        = string
+  description = "Backboard assistant content (BACKBOARD_ASSISTANT_CONTENT)."
+
+}
+
 # --- OAuth: Google ---
 
 variable "google_client_id" {
@@ -245,4 +275,21 @@ variable "alarm_email" {
   type        = string
   description = "Email address for CloudWatch alarm notifications. Leave empty to skip."
   default     = ""
+}
+
+variable "domain_host" {
+  type        = string
+  description = "Domain host (DOMAIN_HOST)."
+  default     = ""
+}
+
+variable "domain_client" {
+  type        = string
+  description = "Domain client (DOMAIN_CLIENT)."
+  default     = ""
+}
+
+variable "custom_domain_2" {
+  type        = string
+  description = "Custom domain to associate with the App Runner service. Leave empty to skip."
 }

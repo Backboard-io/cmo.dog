@@ -77,39 +77,6 @@ export function Header({ user }: HeaderProps) {
           <PawIcon />
           <span className="font-semibold text-white">CMO.dog</span>
         </Link>
-
-        {/* {user && (
-          <>
-            <Link
-              href="/history"
-              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all focus:outline-none ${
-                isHistory
-                  ? "bg-bb-blue/20 text-bb-blue font-semibold"
-                  : "text-bb-steel hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                <circle cx="8" cy="8" r="6" />
-                <path d="M8 5v3.5l2 1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              History
-            </Link>
-            <Link
-              href="/billing"
-              className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-all focus:outline-none ${
-                isBilling
-                  ? "bg-bb-blue/20 text-bb-blue font-semibold"
-                  : "text-bb-steel hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-                <rect x="1" y="3" width="14" height="10" rx="2" />
-                <path d="M1 6h14" strokeLinecap="round" />
-              </svg>
-              Billing
-            </Link>
-          </>
-        )} */}
       </div>
 
       {user && (

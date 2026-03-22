@@ -123,7 +123,7 @@ function HomeInner() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
   const [llmProvider, setLlmProvider] = useState("openrouter");
-  const [modelName, setModelName] = useState("anthropic/claude-sonnet-4-5");
+  const [modelName, setModelName] = useState("openrouter/free");
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -491,7 +491,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v1.1.0
+          What&apos;s new in v1.2.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

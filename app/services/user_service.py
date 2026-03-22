@@ -201,6 +201,19 @@ async def update_user(user_id: str, **fields) -> Optional[dict]:
     return user
 
 
+async def delete_user(user_id: str) -> bool:
+    client = _get_client()
+    aid = await get_storage_assistant_id()
+    all_users = await _all_user_memories()
+    user = next((u for u in all_users if u.get("user_id") == user_id), None)
+    if not user:
+        return False
+    memory_id = user.get("_memory_id")
+    await client.delete_memory(assistant_id=aid, memory_id=memory_id)
+    print(f"[user] Deleted user {user.get('email')} ({user_id})")
+    return True
+
+
 async def increment_prompts(user_id: str) -> int:
     user = await find_user_by_id(user_id)
     if not user:
