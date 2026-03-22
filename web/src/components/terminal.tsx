@@ -7,6 +7,10 @@ type TerminalProps = {
   initialLines?: string[];
   className?: string;
   isComplete?: boolean;
+  /** When true, show initialLines as static history — don't open an EventSource. */
+  skipStream?: boolean;
+  /** Increment to force a reconnect (e.g. on audit retry). */
+  version?: number;
 };
 
 type AgentEntry = { key: string; line: string };
@@ -15,6 +19,23 @@ function parseAgentKey(line: string): string | null {
   const text = line.startsWith("> ") ? line.slice(2) : line;
   const m = text.match(/^([A-Za-z][A-Za-z\s]{0,20}):/);
   return m ? m[1].trim() : null;
+}
+
+// Mirrors the streaming dedup: each agent key appears once, last value wins.
+function buildEntries(lines: string[]): AgentEntry[] {
+  const indexByKey = new Map<string, number>();
+  const result: AgentEntry[] = [];
+  lines.forEach((line, i) => {
+    const key = parseAgentKey(line) ?? `sys-${i}`;
+    const existing = indexByKey.get(key);
+    if (existing !== undefined) {
+      result[existing] = { key, line };
+    } else {
+      indexByKey.set(key, result.length);
+      result.push({ key, line });
+    }
+  });
+  return result;
 }
 
 const TerminalPaw = () => (
@@ -53,25 +74,33 @@ function LineContent({ line, isActive }: { line: string; isActive?: boolean }) {
   return <span className="opacity-70">{text}</span>;
 }
 
-export function Terminal({ runId, initialLines = [], className = "", isComplete = false }: TerminalProps) {
-  const [entries, setEntries] = useState<AgentEntry[]>(() =>
-    initialLines.map((line, i) => ({ key: parseAgentKey(line) ?? `sys-${i}`, line }))
-  );
+export function Terminal({ runId, initialLines = [], className = "", isComplete = false, skipStream = false, version = 0 }: TerminalProps) {
+  const [entries, setEntries] = useState<AgentEntry[]>(() => buildEntries(initialLines));
   // key of the newest (first-time) agent row being typed in; updates don't change this
   const [animatingKey, setAnimatingKey] = useState<string | null>(null);
   const [typingText, setTypingText] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const typingIdx = useRef(0);
   const animatingLineRef = useRef("");
+  const prevCompleteRef = useRef(false);
   // tracks which agent keys have already appeared so we never re-animate them
   const seenKeysRef = useRef<Set<string>>(new Set());
 
+  // When skipStream is true, show saved lines without opening an EventSource
   useEffect(() => {
-    if (!runId) return;
+    if (!skipStream || !initialLines.length) return;
+    setEntries(buildEntries(initialLines));
+    prevCompleteRef.current = false;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skipStream, initialLines]);
+
+  useEffect(() => {
+    if (!runId || skipStream) return;
     setEntries([]);
     setAnimatingKey(null);
     setTypingText("");
     seenKeysRef.current = new Set();
+    prevCompleteRef.current = false;
 
     const url = `/stream/${runId}`;
     const es = new EventSource(url);
@@ -110,7 +139,9 @@ export function Terminal({ runId, initialLines = [], className = "", isComplete 
 
     es.onerror = () => es.close();
     return () => es.close();
-  }, [runId]);
+    // version is intentionally included so bumping it forces a fresh reconnect
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runId, version]);
 
   // Typing animation — only fires when a brand-new agent row appears
   useEffect(() => {
@@ -128,7 +159,6 @@ export function Terminal({ runId, initialLines = [], className = "", isComplete 
     return () => clearInterval(id);
   }, [animatingKey]);
 
-  const prevCompleteRef = useRef(false);
   useEffect(() => {
     if (isComplete && !prevCompleteRef.current) {
       prevCompleteRef.current = true;

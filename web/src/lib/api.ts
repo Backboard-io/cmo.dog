@@ -25,6 +25,7 @@ export type RunStatus = {
   credits: number;
   llm_provider: string;
   model_name: string;
+  terminal_log: string[];
 };
 
 export type UserInfo = {
@@ -142,6 +143,18 @@ export async function getHistory(token: string): Promise<{ runs: RunSummary[] }>
 
 export function streamRunUrl(runId: string): string {
   return `${API_BASE}/api/runs/${runId}/stream`;
+}
+
+export async function retryAudit(
+  runId: string,
+  token: string,
+): Promise<{ status: string; run_id: string }> {
+  const res = await fetch(`${API_BASE}/api/runs/${runId}/retry-audit`, {
+    method: "POST",
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
 export async function chatRun(

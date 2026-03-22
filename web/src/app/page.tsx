@@ -385,7 +385,7 @@ function HomeInner() {
           >
             <div className="w-16 h-16 rounded-full overflow-hidden ring-4 ring-bb-blue/15 shadow-xl mx-auto">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/onni.png" alt="Onni — your AI CMO" className="object-cover w-full h-full" />
+              <img src="/onni.png" alt="Onni — The World's First Free Open Source AI CMO" className="object-cover w-full h-full" />
             </div>
             <span
               className="absolute -bottom-1 -right-1 bg-bb-phantom text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow"
@@ -396,12 +396,18 @@ function HomeInner() {
           </div>
 
           <h1 className="text-4xl md:text-5xl font-extrabold text-bb-phantom leading-[1.05] tracking-tight">
-            Your AI CMO.<br />
+            Meet Onni.<br />
             <span
-              className="bg-gradient-to-r from-bb-blue via-purple-500 to-pink-500 bg-clip-text text-transparent"
+              className="hidden sm:block bg-gradient-to-r from-bb-blue via-purple-500 to-pink-500 bg-clip-text text-transparent"
               style={{ animation: "gradientShift 4s ease-in-out infinite" }}
             >
-              One domain.
+            The World's First Free Open Source AI CMO.
+            </span>
+            <span
+              className="sm:hidden text-lg bg-gradient-to-r from-bb-blue via-purple-500 to-pink-500 bg-clip-text text-transparent"
+              style={{ animation: "gradientShift 4s ease-in-out infinite" }}
+            >
+              The World's First Free Open Source AI CMO.
             </span>
           </h1>
           <p className="hidden sm:block text-base text-bb-steel max-w-sm mx-auto leading-relaxed">
@@ -559,7 +565,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.1.1
+          What&apos;s new in v2.2.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

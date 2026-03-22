@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { getRun, chatRun, getStoredToken, getMe, type RunStatus, type UserInfo } from "@/lib/api";
+import { getRun, chatRun, retryAudit, getStoredToken, getMe, type RunStatus, type UserInfo } from "@/lib/api";
 import { Terminal } from "@/components/terminal";
 import { ReportModal } from "@/components/report-modal";
 import { FixDrawer } from "@/components/fix-drawer";
@@ -79,6 +79,23 @@ function HealthRow({
     </li>
   );
 }
+
+const SadDogFace = ({ className = "w-16 h-16" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 80 80" fill="none" aria-hidden>
+    <ellipse cx="14" cy="40" rx="10" ry="15" fill="#D4A76A" transform="rotate(8 14 40)" />
+    <ellipse cx="66" cy="40" rx="10" ry="15" fill="#D4A76A" transform="rotate(-8 66 40)" />
+    <circle cx="40" cy="43" r="27" fill="#F0C87A" />
+    <path d="M25 32 Q31 28 37 31" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <path d="M43 31 Q49 28 55 32" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <circle cx="30" cy="39" r="5" fill="#2D1B00" />
+    <circle cx="31.5" cy="37.5" r="1.5" fill="white" />
+    <circle cx="50" cy="39" r="5" fill="#2D1B00" />
+    <circle cx="51.5" cy="37.5" r="1.5" fill="white" />
+    <ellipse cx="40" cy="50" rx="5" ry="3.5" fill="#8B5E3C" />
+    <path d="M31 60 Q40 56 49 60" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    <path d="M28 43 Q26 49 28 51 Q30 49 28 43Z" fill="#93C5FD" opacity="0.85" />
+  </svg>
+);
 
 const PawIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 100 100" fill="currentColor" aria-hidden>
@@ -163,6 +180,7 @@ type Tab = "health" | "links" | "aigeo" | "passed";
 export default function RunPage({ params }: { params: Promise<{ runId: string }> }) {
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
+  const [runLoaded, setRunLoaded] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
   const [showMonitor, setShowMonitor] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -173,6 +191,8 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [activeTab, setActiveTab] = useState<Tab>("health");
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
+  const [auditRetrying, setAuditRetrying] = useState(false);
+  const [terminalVersion, setTerminalVersion] = useState(0);
   const [activeSection, setActiveSection] = useState<"project" | "analytics" | "feed" | "chat" | null>("chat");
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const toggleSection = (s: "project" | "analytics" | "feed" | "chat") =>
@@ -191,6 +211,8 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       setRun(data);
     } catch {
       setRun(null);
+    } finally {
+      setRunLoaded(true);
     }
   }, [id]);
 
@@ -217,6 +239,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   }, [run?.chat_messages]);
 
   const isLoading = run?.status === "pending" || run?.status === "running";
+
+  // Clear auditRetrying once the server confirms it's running — prevents
+  // a flash back to the sad-dog state during the 3s poll gap.
+  useEffect(() => {
+    if (isLoading && auditRetrying) setAuditRetrying(false);
+  }, [isLoading, auditRetrying]);
   const passedChecks = run?.passed_checks ?? [];
   const failedChecks = run?.failed_checks ?? [];
   const feedItems = run?.feed_items ?? [];
@@ -282,7 +310,16 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
       {/* Dark zone — seamless with header, no border/rounding */}
       <div className="flex-shrink-0 bg-bb-phantom pb-4">
-        <Terminal runId={runId} className="w-full" isComplete={!isLoading && run !== null} />
+        {runLoaded && (
+          <Terminal
+            runId={runId}
+            initialLines={run?.terminal_log ?? []}
+            skipStream={(run?.status === "completed" || run?.status === "failed") && !auditRetrying}
+            className="w-full"
+            isComplete={!isLoading && run !== null && !auditRetrying}
+            version={terminalVersion}
+          />
+        )}
         <div className="flex items-center justify-between mt-2 px-4">
           <div className="flex items-center gap-2">
             <PdfReportButton run={run} disabled={isLoading} />
@@ -427,10 +464,65 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             </div>
 
             {activeTab === "health" && (
-              isLoading ? (
+              (isLoading || auditRetrying) ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                   <PawIcon className="w-14 h-14 text-bb-steel animate-pulse" />
                   <p className="font-semibold text-gray-600 mt-3">Analyzing…</p>
+                </div>
+              ) : !isLoading && (run?.analytics_overview ?? []).length === 0 && run?.status === "completed" ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center lg:flex-1 gap-3">
+                  <div style={{ animation: "sadSway 2.8s ease-in-out infinite" }}>
+                    <SadDogFace className="w-16 h-16" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-600">Woof… audit came up empty</p>
+                    <p className="text-xs text-gray-400 mt-1">The model didn&apos;t return valid scores.</p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const token = getStoredToken();
+                      if (!runId || !token || auditRetrying) return;
+                      setAuditRetrying(true);
+                      try {
+                        await retryAudit(runId, token);
+                        // Reconnect terminal to the new stream — auditRetrying stays
+                        // true until the poll confirms isLoading (avoids sad-dog flash).
+                        setTerminalVersion((v) => v + 1);
+                      } catch {
+                        setAuditRetrying(false);
+                      }
+                    }}
+                    disabled={auditRetrying}
+                    className={`
+                      inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold
+                      transition-all duration-200 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40
+                      ${auditRetrying
+                        ? "bg-orange-50 text-orange-400 cursor-wait"
+                        : "bg-orange-500 text-white hover:bg-orange-600 shadow-sm hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)]"
+                      }
+                    `}
+                  >
+                    {auditRetrying ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M12 2a10 10 0 0 1 10 10" className="origin-center" />
+                        </svg>
+                        <span>Sniffing again…</span>
+                      </>
+                    ) : (
+                      <>
+                        <PawIcon className="w-4 h-4" />
+                        <span>Retry Audit</span>
+                      </>
+                    )}
+                  </button>
+                  <style jsx>{`
+                    @keyframes sadSway {
+                      0%, 100% { transform: rotate(-4deg) translateY(0px); }
+                      50%       { transform: rotate(4deg) translateY(-3px); }
+                    }
+                  `}</style>
                 </div>
               ) : (
                 <div className="space-y-5 max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
@@ -811,7 +903,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.1.1
+          What&apos;s new in v2.2.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

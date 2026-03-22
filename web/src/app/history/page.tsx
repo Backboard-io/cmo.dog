@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getHistory, getStoredToken, type RunSummary } from "@/lib/api";
+import { getHistory, getStoredToken, retryAudit, type RunSummary } from "@/lib/api";
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
@@ -131,6 +131,37 @@ function EmptyState({ onFetch }: { onFetch: () => void }) {
   );
 }
 
+// ─── Sad dog SVG ──────────────────────────────────────────────────────────────
+
+function SadDogFace({ className = "w-14 h-14" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 80 80" fill="none" aria-hidden>
+      {/* Floppy left ear */}
+      <ellipse cx="14" cy="40" rx="10" ry="15" fill="#D4A76A" transform="rotate(8 14 40)" />
+      {/* Floppy right ear */}
+      <ellipse cx="66" cy="40" rx="10" ry="15" fill="#D4A76A" transform="rotate(-8 66 40)" />
+      {/* Head */}
+      <circle cx="40" cy="43" r="27" fill="#F0C87A" />
+      {/* Sad inner brow (left) — dips toward nose bridge */}
+      <path d="M25 32 Q31 28 37 31" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Sad inner brow (right) */}
+      <path d="M43 31 Q49 28 55 32" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Left eye */}
+      <circle cx="30" cy="39" r="5" fill="#2D1B00" />
+      <circle cx="31.5" cy="37.5" r="1.5" fill="white" />
+      {/* Right eye */}
+      <circle cx="50" cy="39" r="5" fill="#2D1B00" />
+      <circle cx="51.5" cy="37.5" r="1.5" fill="white" />
+      {/* Nose */}
+      <ellipse cx="40" cy="50" rx="5" ry="3.5" fill="#8B5E3C" />
+      {/* Sad frown */}
+      <path d="M31 60 Q40 56 49 60" stroke="#8B5E3C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      {/* Teardrop on left cheek */}
+      <path d="M28 43 Q26 49 28 51 Q30 49 28 43Z" fill="#93C5FD" opacity="0.85" />
+    </svg>
+  );
+}
+
 // ─── Run card ─────────────────────────────────────────────────────────────────
 
 const SCORE_KEYS: { key: string; label: string }[] = [
@@ -140,7 +171,19 @@ const SCORE_KEYS: { key: string; label: string }[] = [
   { key: "best_practices", label: "BP" },
 ];
 
-function RunCard({ run, index, onClick }: { run: RunSummary; index: number; onClick: () => void }) {
+function RunCard({
+  run,
+  index,
+  onClick,
+  onRetry,
+}: {
+  run: RunSummary;
+  index: number;
+  onClick: () => void;
+  onRetry?: () => Promise<void>;
+}) {
+  const [retrying, setRetrying] = useState(false);
+
   const date = new Date(run.created_at);
   const dateLabel = isNaN(date.getTime())
     ? "—"
@@ -150,13 +193,24 @@ function RunCard({ run, index, onClick }: { run: RunSummary; index: number; onCl
     .replace(/^https?:\/\//, "")
     .replace(/\/$/, "");
 
+  const scores = run.scores ?? {};
+  const auditEmpty =
+    run.status === "completed" &&
+    Object.values(scores).every((s) => s === 0) &&
+    run.issues_count === 0 &&
+    run.passed_count === 0;
+
   const issuesLabel =
-    run.issues_count === 0
+    auditEmpty
+      ? "Audit empty"
+      : run.issues_count === 0
       ? "All clear 🎉"
       : `${run.issues_count} issue${run.issues_count === 1 ? "" : "s"}`;
 
   const issuesColor =
-    run.issues_count === 0
+    auditEmpty
+      ? "text-orange-600 bg-orange-50 border-orange-200"
+      : run.issues_count === 0
       ? "text-green-600 bg-green-50 border-green-200"
       : run.issues_count <= 3
       ? "text-amber-600 bg-amber-50 border-amber-200"
@@ -168,52 +222,120 @@ function RunCard({ run, index, onClick }: { run: RunSummary; index: number; onCl
       : run.model_name
     : null;
 
+  async function handleRetry(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!onRetry || retrying) return;
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className="group w-full text-left rounded-2xl border border-gray-100 bg-white p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-bb-blue/30"
-      style={{
-        animation: `cardIn 0.4s ${index * 60}ms cubic-bezier(0.22,1,0.36,1) both`,
-      }}
+    <div
+      className="group w-full text-left rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      style={{ animation: `cardIn 0.4s ${index * 60}ms cubic-bezier(0.22,1,0.36,1) both` }}
     >
-      {/* Header row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-bb-phantom truncate group-hover:text-bb-blue transition-colors">
-            {run.project_name || domain}
-          </p>
-          <p className="text-xs text-bb-steel truncate mt-0.5">{domain}</p>
-        </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span
-            className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${issuesColor}`}
-          >
-            {issuesLabel}
-          </span>
-          <span className="text-[10px] text-gray-400">{dateLabel}</span>
-          {modelLabel && (
-            <span className="text-[10px] text-bb-steel/70 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]" title={run.model_name}>
-              {modelLabel}
+      {/* Clickable main area */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => e.key === "Enter" && onClick()}
+        className="p-5 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-bb-blue/30 rounded-2xl"
+      >
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-bb-phantom truncate group-hover:text-bb-blue transition-colors">
+              {run.project_name || domain}
+            </p>
+            <p className="text-xs text-bb-steel truncate mt-0.5">{domain}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${issuesColor}`}>
+              {issuesLabel}
             </span>
-          )}
+            <span className="text-[10px] text-gray-400">{dateLabel}</span>
+            {modelLabel && (
+              <span
+                className="text-[10px] text-bb-steel/70 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]"
+                title={run.model_name}
+              >
+                {modelLabel}
+              </span>
+            )}
+          </div>
         </div>
+
+        {/* Score rings — or sad dog when audit empty */}
+        {auditEmpty ? (
+          <div className="mt-3 flex items-center gap-3">
+            <div style={{ animation: "sadSway 2.8s ease-in-out infinite" }}>
+              <SadDogFace className="w-12 h-12 flex-shrink-0" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-600">Woof… nothing came back</p>
+              <p className="text-xs text-gray-400 mt-0.5">The model returned an empty audit.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 flex gap-4">
+            {SCORE_KEYS.map(({ key, label }) => {
+              const score = scores[key] ?? 0;
+              return <ScoreRing key={key} score={score} label={label} size={44} />;
+            })}
+            <div className="flex-1" />
+            <div className="self-end mb-1 text-bb-steel/40 group-hover:text-bb-blue/60 group-hover:translate-x-0.5 transition-all">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Score rings */}
-      <div className="mt-4 flex gap-4">
-        {SCORE_KEYS.map(({ key, label }) => {
-          const score = run.scores?.[key] ?? 0;
-          return <ScoreRing key={key} score={score} label={label} size={44} />;
-        })}
-        <div className="flex-1" />
-        {/* Arrow hint */}
-        <div className="self-end mb-1 text-bb-steel/40 group-hover:text-bb-blue/60 group-hover:translate-x-0.5 transition-all">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-            <path d="M3 8h10M9 4l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+      {/* Retry strip — only visible when audit empty */}
+      {auditEmpty && onRetry && (
+        <div className="px-5 pb-4">
+          <button
+            onClick={handleRetry}
+            disabled={retrying}
+            className={`
+              w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
+              transition-all duration-200 active:scale-[0.97] focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/40
+              ${retrying
+                ? "bg-orange-50 text-orange-400 cursor-wait"
+                : "bg-orange-500 text-white hover:bg-orange-600 shadow-sm hover:shadow-[0_4px_16px_rgba(249,115,22,0.35)]"
+              }
+            `}
+          >
+            {retrying ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25" />
+                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M12 2a10 10 0 0 1 10 10" className="origin-center" />
+                </svg>
+                <span>Sniffing again…</span>
+              </>
+            ) : (
+              <>
+                <svg viewBox="0 0 100 100" fill="currentColor" className="w-4 h-4" aria-hidden>
+                  <ellipse cx="50" cy="72" rx="23" ry="19" />
+                  <ellipse cx="21" cy="46" rx="10" ry="13" transform="rotate(-18, 21, 46)" />
+                  <ellipse cx="38" cy="32" rx="10" ry="13" transform="rotate(-6, 38, 32)" />
+                  <ellipse cx="62" cy="32" rx="10" ry="13" transform="rotate(6, 62, 32)" />
+                  <ellipse cx="79" cy="46" rx="10" ry="13" transform="rotate(18, 79, 46)" />
+                </svg>
+                <span>Retry Audit</span>
+              </>
+            )}
+          </button>
         </div>
-      </div>
-    </button>
+      )}
+    </div>
   );
 }
 
@@ -223,14 +345,16 @@ export default function HistoryPage() {
   const router = useRouter();
   const [runs, setRuns] = useState<RunSummary[] | null>(null);
   const [error, setError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = getStoredToken();
-    if (!token) {
+    const t = getStoredToken();
+    if (!t) {
       router.replace("/");
       return;
     }
-    getHistory(token)
+    setToken(t);
+    getHistory(t)
       .then((data) => setRuns(data.runs))
       .catch((e) => setError(e instanceof Error ? e.message : "Could not load history"));
   }, [router]);
@@ -288,6 +412,10 @@ export default function HistoryPage() {
                 run={run}
                 index={i}
                 onClick={() => router.push(`/run/${run.run_id}`)}
+                onRetry={token ? async () => {
+                  await retryAudit(run.run_id, token);
+                  router.push(`/run/${run.run_id}`);
+                } : undefined}
               />
             ))}
           </div>
@@ -302,6 +430,10 @@ export default function HistoryPage() {
         @keyframes cardIn {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes sadSway {
+          0%, 100% { transform: rotate(-4deg) translateY(0px); }
+          50%       { transform: rotate(4deg) translateY(-3px); }
         }
       `}</style>
     </div>

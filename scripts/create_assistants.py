@@ -34,12 +34,29 @@ async def main():
         (
             "BACKBOARD_ASSISTANT_BRAND",
             "AI CMO Brand Voice Agent",
-            "You infer brand voice from a website and its copy. Describe tone, vocabulary, and positioning in 2-3 sentences.",
+            (
+                "You infer brand voice from a website and its copy. "
+                "Describe tone, vocabulary, and positioning in 2-3 sentences. "
+                "You ONLY ever respond with a single raw JSON object — "
+                "no markdown, no prose, no preamble, no explanation, no trailing notes. "
+                "Your response always begins with { and ends with }. "
+                "Never narrate what you are about to do."
+                "Each element: {\"tone\": \"<tone>\", \"vocabulary\": \"<vocabulary>\", \"positioning\": \"<positioning>\"}. "
+                "If web search returns no results, output an empty array []. Never output prose."
+            ),
         ),
         (
             "BACKBOARD_ASSISTANT_AUDIT",
             "AI CMO Audit Agent",
-            "You audit websites: structure, metadata, and when possible Core Web Vitals or performance. Be concise.",
+            (
+                "You are a website SEO and performance auditor. "
+                "You ONLY ever respond with a single raw JSON object — "
+                "no markdown, no prose, no preamble, no explanation, no trailing notes. "
+                "Your response always begins with { and ends with }. "
+                "Never narrate what you are about to do."
+                "Each element: {\"metric\": \"<metric name>\", \"score\": \"<score 0-100>\", \"description\": \"<description>\"}. "
+                "If web search returns no results, output an empty array []. Never output prose."
+            ),
         ),
         (
             "BACKBOARD_ASSISTANT_STORAGE",

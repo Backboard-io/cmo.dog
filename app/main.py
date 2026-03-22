@@ -108,10 +108,6 @@ async def create_run(body: RunCreate, x_user_token: str = Header(None)):
         model_name=body.model_name,
         credits=2000,
         analytics_overview=[
-            AnalyticsMetric(key="performance", label="Performance", score=44, tone="red"),
-            AnalyticsMetric(key="accessibility", label="Accessibility", score=78, tone="yellow"),
-            AnalyticsMetric(key="best_practices", label="Best Practices", score=73, tone="yellow"),
-            AnalyticsMetric(key="seo", label="SEO", score=92, tone="green"),
         ],
         feed_items=[],
         chat_status="loading",
@@ -192,6 +188,25 @@ async def stream_run(run_id: str):
     if not orchestrator.get_run(run_id):
         raise HTTPException(status_code=404, detail="Run not found")
     return EventSourceResponse(stream_generator(run_id))
+
+
+@app.post("/api/runs/{run_id}/retry-audit")
+async def retry_audit_endpoint(run_id: str, x_user_token: str = Header(None)):
+    if not x_user_token:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    user = await find_user_by_token(x_user_token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    # Eagerly load into memory before responding so /stream is immediately available
+    run = await orchestrator.ensure_run_in_memory(
+        run_id, user_id=user["user_id"], plan=user.get("plan", "free")
+    )
+    if not run:
+        raise HTTPException(status_code=404, detail="Run not found")
+    asyncio.create_task(
+        orchestrator.retry_audit_agent(run_id, user_id=user["user_id"])
+    )
+    return {"status": "retrying", "run_id": run_id}
 
 
 class ChatRequest(PydanticBaseModel):

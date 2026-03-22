@@ -86,3 +86,4 @@ class RunStatus(BaseModel):
     credits: int = 2000
     llm_provider: str = "openrouter"
     model_name: str = "anthropic/claude-sonnet-4-5"
+    terminal_log: list[str] = Field(default_factory=list)

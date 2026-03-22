@@ -151,9 +151,10 @@ from app.schemas import (
 
 
 _AUDIT_PROMPT = """\
-Search and inspect {url}. Your entire response MUST be a single raw JSON object — no markdown fences, \
+Inspect provided content.  \
+Your entire response MUST be a single raw JSON object — no markdown fences, \
 no prose before or after, no code blocks. Start your response with {{ and end with }}.
-
+{url}
 Required JSON shape (all keys required):
 {{
   "performance_score": <int 0-100>,
@@ -307,6 +308,7 @@ def _score_tone(score: int) -> str:
 
 def _extract_json(text: str) -> dict:
     """Extract and parse the first JSON object found in text."""
+
     try:
         return json.loads(text)
     except json.JSONDecodeError:
@@ -455,6 +457,177 @@ def _build_greeting(run: RunStatus, domain: str) -> str:
     return " ".join(parts)
 
 
+async def _run_audit_agent(
+    run_id: str,
+    run: RunStatus,
+    client: BackboardClient,
+    plan: str,
+    llm_provider: Optional[str],
+    model_name: Optional[str],
+) -> None:
+    """Run the audit agent and update run state in place."""
+    audit_id = _assistant_id("BACKBOARD_ASSISTANT_AUDIT")
+    website_url = run.website_url
+
+    await _emit(run_id, "Audit: Running website health checks…")
+    thread = await client.create_thread(audit_id)
+
+    heartbeat_msgs = [
+        "Audit: Checking meta tags and Open Graph…",
+        "Audit: Evaluating Core Web Vitals…",
+        "Audit: Inspecting robots.txt and sitemap…",
+        "Audit: Reviewing structured data…",
+        "Audit: Checking mobile-friendliness…",
+        "Audit: Auditing accessibility signals…",
+        "Audit: Scanning internal and external links…",
+    ]
+
+    async def _heartbeat() -> None:
+        for msg in heartbeat_msgs:
+            await asyncio.sleep(12)
+            await _emit(run_id, msg)
+
+    heartbeat_task = asyncio.create_task(_heartbeat())
+    try:
+        audit_raw = await _add_message_with_search(
+            str(thread.thread_id),
+            _AUDIT_PROMPT.format(url=website_url),
+            plan=plan,
+            llm_provider=llm_provider,
+            model_name=model_name,
+        )
+        if not audit_raw:
+            audit_raw = await _add_message_with_search(
+                str(thread.thread_id),
+                _AUDIT_PROMPT.format(url=website_url),
+                plan=plan,
+                llm_provider="openai",
+                model_name="gpt-5.4",
+            )
+    finally:
+        heartbeat_task.cancel()
+
+    try:
+        audit_data = _extract_json(audit_raw)
+        perf = int(audit_data.get("performance_score", 50))
+        a11y = int(audit_data.get("accessibility_score", 50))
+        bp = int(audit_data.get("best_practices_score", 50))
+        seo = int(audit_data.get("seo_score", 50))
+        run.analytics_overview = [
+            AnalyticsMetric(key="performance", label="Performance", score=perf, tone=_score_tone(perf)),
+            AnalyticsMetric(key="accessibility", label="Accessibility", score=a11y, tone=_score_tone(a11y)),
+            AnalyticsMetric(key="best_practices", label="Best Practices", score=bp, tone=_score_tone(bp)),
+            AnalyticsMetric(key="seo", label="SEO", score=seo, tone=_score_tone(seo)),
+        ]
+        run.passed_checks = [
+            AuditCheck(name=c["name"], description=c.get("description", ""), value=c.get("value", ""), passed=True)
+            for c in audit_data.get("passed_checks", [])
+            if isinstance(c, dict) and c.get("name")
+        ]
+        failed = [
+            c for c in audit_data.get("failed_checks", [])
+            if isinstance(c, dict) and c.get("name")
+        ]
+        run.failed_checks = [
+            AuditCheck(
+                name=c["name"],
+                description=c.get("description", ""),
+                value=c.get("value", ""),
+                passed=False,
+                how_to_fix=_how_to_fix_or_fallback(c),
+            )
+            for c in failed
+        ]
+        run.feed_items = [
+            FeedItem(
+                id=c["name"].lower().replace(" ", "-")[:40],
+                title=c["name"],
+                status=f"{c.get('priority', 'medium').title()} priority",
+                description=c.get("description", ""),
+                how_to_fix=_how_to_fix_or_fallback(c),
+                action_label="Fix",
+            )
+            for c in failed
+        ]
+        run.audit_summary = audit_data.get("summary", audit_raw[:1500])
+        audit_memory = (
+            f"Website audit for {website_url}:\n"
+            f"Scores — Performance: {perf}, Accessibility: {a11y}, Best Practices: {bp}, SEO: {seo}\n"
+            f"Summary: {run.audit_summary}\n"
+            f"Issues ({len(failed)}): " + ", ".join(c["name"] for c in failed[:10])
+        )
+        await _store_agent_memory(run_id, audit_memory, "audit")
+        await _emit(run_id, f"✓ Audit: Found {len(failed)} SEO opportunities (score: {seo}/100)")
+    except Exception as e:
+        print(f"[audit] JSON parse failed: {e}\nRaw ({len(audit_raw)} chars): {audit_raw[:800]!r}")
+        run.audit_summary = audit_raw[:1500]
+        await _emit(run_id, "⚠ Audit: Could not parse response — scores unavailable")
+
+
+async def ensure_run_in_memory(run_id: str, user_id: str, plan: str = "free") -> Optional[RunStatus]:
+    """Load a historical run into memory so SSE stream is available. No-op if already present."""
+    if run_id in _runs:
+        return _runs[run_id]
+    from app.services.run_history_service import get_run_detail
+    detail = await get_run_detail(run_id, user_id)
+    if not detail:
+        return None
+    run = RunStatus(**{k: v for k, v in detail.items() if k in RunStatus.model_fields})
+    _runs[run_id] = run
+    _terminal_lines[run_id] = list(run.terminal_log) if run.terminal_log else []
+    _terminal_events[run_id] = asyncio.Event()
+    _run_plans[run_id] = plan
+    _run_llm_providers[run_id] = run.llm_provider
+    _run_model_names[run_id] = run.model_name
+    _run_users[run_id] = user_id
+    return run
+
+
+async def retry_audit_agent(run_id: str, user_id: str = "") -> None:
+    """Re-run just the audit agent for a run that is already in memory."""
+    run = _runs.get(run_id)
+    if not run:
+        print(f"[retry_audit] run {run_id} not in memory — call ensure_run_in_memory first")
+        return
+
+    plan = _run_plans.get(run_id, "free")
+    llm_provider = _run_llm_providers.get(run_id) or run.llm_provider
+    model_name = _run_model_names.get(run_id) or run.model_name
+
+    run.status = "running"
+    run.analytics_overview = []
+    run.passed_checks = []
+    run.failed_checks = []
+    run.feed_items = []
+    run.audit_summary = ""
+
+    # Clear buffered lines so a reconnecting terminal only sees retry output
+    _terminal_lines[run_id] = []
+    if run_id in _terminal_events:
+        _terminal_events[run_id] = asyncio.Event()
+
+    await _emit(run_id, "Onni: Hold on, let me try that again…")
+
+    client = _get_client()
+    try:
+        await _run_audit_agent(run_id, run, client, plan, llm_provider, model_name)
+        run.feed_items = _backfill_feed_how_to_fix(run.feed_items or [])
+    except Exception as e:
+        print(f"[retry_audit] audit agent failed for {run_id}: {e}")
+        await _emit(run_id, f"✕ Retry failed: {e}")
+
+    run.status = "completed"
+    await _emit(run_id, "Onni: All done!")
+
+    run.terminal_log = list(_terminal_lines.get(run_id, []))
+    if user_id:
+        try:
+            from app.services.run_history_service import save_run
+            await save_run(run, user_id)
+        except Exception as e:
+            print(f"[retry_audit] Failed to re-save run {run_id}: {e}")
+
+
 async def run_orchestrator(
     run_id: str,
     website_url: str,
@@ -510,7 +683,7 @@ async def run_orchestrator(
         thread = await client.create_thread(content_id)
         prompt = (
             f"URL: {website_url}\n"
-            "Web search, then ≤8 sentences: what the site sells/offers and main content or docs. Plain text only."
+            "Answer with ≤8 sentences: what the site sells/offers and main content or docs. Plain text only."
         )
         product_info = (await _add_message_with_search(
             str(thread.thread_id), prompt, plan=plan,
@@ -535,7 +708,7 @@ async def run_orchestrator(
         thread = await client.create_thread(competitor_id)
         prompt = (
             f"URL: {website_url}\n"
-            "Web search, then answer with ONLY a JSON array — no markdown fences, no commentary.\n"
+            "Answer with ONLY a JSON array — no markdown fences, no commentary.\n"
             "At least 3 real competitors (mix Direct and Secondary) for the same market as this URL.\n"
             'Each object: {"competitor":"<company name>","category":"Direct"|"Secondary","pricing":"<short>"} '
             '(pricing e.g. Free, $9/mo, Contact sales, Open core).'
@@ -546,7 +719,6 @@ async def run_orchestrator(
             llm_provider=llm_provider, model_name=model_name,
         )
 
-        print(f"[competitors] raw response ({len(comp_text)} chars): {comp_text[:500]!r}")
         report_rows, competitors = _parse_competitor_response(comp_text)
         comp_count = len(competitors)
         if run:
@@ -595,91 +767,7 @@ async def run_orchestrator(
 
     # ── Audit ─────────────────────────────────────────────────────────────────
     async def _run_audit() -> None:
-        await _emit(run_id, "Audit: Running website health checks…")
-        thread = await client.create_thread(audit_id)
-
-        heartbeat_msgs = [
-            "Audit: Checking meta tags and Open Graph…",
-            "Audit: Evaluating Core Web Vitals…",
-            "Audit: Inspecting robots.txt and sitemap…",
-            "Audit: Reviewing structured data…",
-            "Audit: Checking mobile-friendliness…",
-            "Audit: Auditing accessibility signals…",
-            "Audit: Scanning internal and external links…",
-        ]
-
-        async def _heartbeat() -> None:
-            for msg in heartbeat_msgs:
-                await asyncio.sleep(12)
-                await _emit(run_id, msg)
-
-        heartbeat_task = asyncio.create_task(_heartbeat())
-        try:
-            audit_raw = await _add_message_with_search(
-                str(thread.thread_id),
-                _AUDIT_PROMPT.format(url=website_url),
-                plan=plan,
-                llm_provider=llm_provider,
-                model_name=model_name,
-            )
-        finally:
-            heartbeat_task.cancel()
-
-        if run:
-            try:
-                audit_data = _extract_json(audit_raw)
-                perf = int(audit_data.get("performance_score", 50))
-                a11y = int(audit_data.get("accessibility_score", 50))
-                bp = int(audit_data.get("best_practices_score", 50))
-                seo = int(audit_data.get("seo_score", 50))
-                run.analytics_overview = [
-                    AnalyticsMetric(key="performance", label="Performance", score=perf, tone=_score_tone(perf)),
-                    AnalyticsMetric(key="accessibility", label="Accessibility", score=a11y, tone=_score_tone(a11y)),
-                    AnalyticsMetric(key="best_practices", label="Best Practices", score=bp, tone=_score_tone(bp)),
-                    AnalyticsMetric(key="seo", label="SEO", score=seo, tone=_score_tone(seo)),
-                ]
-                run.passed_checks = [
-                    AuditCheck(name=c["name"], description=c.get("description", ""), value=c.get("value", ""), passed=True)
-                    for c in audit_data.get("passed_checks", [])
-                    if isinstance(c, dict) and c.get("name")
-                ]
-                failed = [
-                    c for c in audit_data.get("failed_checks", [])
-                    if isinstance(c, dict) and c.get("name")
-                ]
-                run.failed_checks = [
-                    AuditCheck(
-                        name=c["name"],
-                        description=c.get("description", ""),
-                        value=c.get("value", ""),
-                        passed=False,
-                        how_to_fix=_how_to_fix_or_fallback(c),
-                    )
-                    for c in failed
-                ]
-                run.feed_items = [
-                    FeedItem(
-                        id=c["name"].lower().replace(" ", "-")[:40],
-                        title=c["name"],
-                        status=f"{c.get('priority', 'medium').title()} priority",
-                        description=c.get("description", ""),
-                        how_to_fix=_how_to_fix_or_fallback(c),
-                        action_label="Fix",
-                    )
-                    for c in failed
-                ]
-                run.audit_summary = audit_data.get("summary", audit_raw[:1500])
-                audit_memory = (
-                    f"Website audit for {website_url}:\n"
-                    f"Scores — Performance: {perf}, Accessibility: {a11y}, Best Practices: {bp}, SEO: {seo}\n"
-                    f"Summary: {run.audit_summary}\n"
-                    f"Issues ({len(failed)}): " + ", ".join(c["name"] for c in failed[:10])
-                )
-                await _store_agent_memory(run_id, audit_memory, "audit")
-                await _emit(run_id, f"✓ Audit: Found {len(failed)} SEO opportunities (score: {seo}/100)")
-            except Exception as e:
-                print(f"[audit] JSON parse failed: {e}\nRaw ({len(audit_raw)} chars): {audit_raw[:800]!r}")
-                run.audit_summary = audit_raw[:1500]
+        await _run_audit_agent(run_id, run, client, plan, llm_provider, model_name)
 
     # ── Launch all four concurrently ──────────────────────────────────────────
     await asyncio.gather(
@@ -708,6 +796,7 @@ async def run_orchestrator(
             )
         ]
 
+        run.terminal_log = list(_terminal_lines.get(run_id, []))
         uid = _run_users.get(run_id, "")
         if uid:
             try:

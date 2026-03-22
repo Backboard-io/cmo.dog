@@ -9,9 +9,20 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.1.1",
+    version: "v2.2.0",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🔁", text: "Retry audit — re-run website health checks on any existing run without re-analyzing" },
+      { emoji: "🖥️", text: "Terminal replays persisted history on run reload — no live stream needed" },
+      { emoji: "📋", text: "History page redesign with richer run cards and improved mobile layout" },
+      { emoji: "🏗️", text: "Audit agent extracted to dedicated async function with live heartbeat messages" },
+      { emoji: "🗄️", text: "RunStatus now persists terminal_log for full audit replay" },
+    ],
+  },
+  {
+    version: "v2.1.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🤖", text: "History cards now show the model used for each analysis run" },
       { emoji: "💬", text: "Chat replies are no longer truncated at 1000 chars — full answers from Onni" },
