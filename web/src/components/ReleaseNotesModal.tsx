@@ -9,9 +9,16 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.0.1",
+    version: "v2.0.2",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🔷", text: "Backboard.io footer badge — shared component, clearer border, logo chip, Next.js image" },
+    ],
+  },
+  {
+    version: "v2.0.1",
+    date: "Mar 2026",
     items: [
       { emoji: "📱", text: "Run page mobile accordion — one section open at a time, full-width scroll stack (no overlap)" },
       { emoji: "🖼️", text: "Clearer section borders and polish on mobile run toggles" },

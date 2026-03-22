@@ -8,6 +8,7 @@ import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { SettingsModal, FREE_PROVIDER, FREE_MODEL } from "@/components/SettingsModal";
 import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
+import { BackboardBadge } from "@/components/BackboardBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowUpRight } from "lucide-react";
 
@@ -547,27 +548,12 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.0.1
+          What&apos;s new in v2.0.2
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>
 
-        <a
-          href="https://backboard.io"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-bb-steel/20 bg-white/60 hover:bg-bb-blue/5 hover:border-bb-blue/30 transition-all duration-300 active:scale-[0.97]"
-          aria-label="Built on Backboard.io"
-        >
-          <span className="w-4 h-4 rounded-sm bg-bb-blue flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200" aria-hidden>
-            <svg viewBox="0 0 16 16" fill="white" className="w-2.5 h-2.5">
-              <path d="M3 2h5.5a3 3 0 0 1 0 6H3V2zm0 8h6a3 3 0 0 1 0 6H3v-6z" />
-            </svg>
-          </span>
-          <span className="text-[11px] text-bb-steel/70 group-hover:text-bb-blue transition-colors duration-200 font-medium tracking-tight">
-            Built on <span className="text-bb-phantom group-hover:text-bb-blue transition-colors duration-200">Backboard.io</span>
-          </span>
-        </a>
+        <BackboardBadge />
       </div>
 
       <style jsx>{`
