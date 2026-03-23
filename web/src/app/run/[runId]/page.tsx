@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { getRun, chatRun, retryAudit, getStoredToken, getMe, type RunStatus, type UserInfo } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { getRun, chatRun, retryAudit, createRun, getStoredToken, getMe, type RunStatus, type UserInfo } from "@/lib/api";
 import { Terminal } from "@/components/terminal";
 import { ReportModal } from "@/components/report-modal";
 import { FixDrawer } from "@/components/fix-drawer";
@@ -15,6 +16,10 @@ import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { BackboardBadge } from "@/components/BackboardBadge";
+import { SettingsModal, FREE_PROVIDER, FREE_MODEL } from "@/components/SettingsModal";
+
+const SETTINGS_PROVIDER_KEY = "cmodog_llm_provider";
+const SETTINGS_MODEL_KEY = "cmodog_model_name";
 function CircleProgress({ score, tone }: { score: number; tone: string }) {
   const r = 22;
   const cx = 28;
@@ -178,6 +183,7 @@ function stripMarkdown(text: string): string {
 type Tab = "health" | "links" | "aigeo" | "passed";
 
 export default function RunPage({ params }: { params: Promise<{ runId: string }> }) {
+  const router = useRouter();
   const [runId, setRunId] = useState<string | null>(null);
   const [run, setRun] = useState<RunStatus | null>(null);
   const [runLoaded, setRunLoaded] = useState(false);
@@ -195,6 +201,11 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
   const [terminalVersion, setTerminalVersion] = useState(0);
   const [activeSection, setActiveSection] = useState<"project" | "analytics" | "feed" | "chat" | null>("chat");
   const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [llmProvider, setLlmProvider] = useState(FREE_PROVIDER);
+  const [modelName, setModelName] = useState(FREE_MODEL);
+  const [showRerunConfirm, setShowRerunConfirm] = useState(false);
+  const [rerunLoading, setRerunLoading] = useState(false);
   const toggleSection = (s: "project" | "analytics" | "feed" | "chat") =>
     setActiveSection((prev) => (prev === s ? null : s));
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -226,6 +237,33 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
     const token = getStoredToken();
     if (token) getMe(token).then(setUser).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    const storedProvider = localStorage.getItem(SETTINGS_PROVIDER_KEY);
+    const storedModel = localStorage.getItem(SETTINGS_MODEL_KEY);
+    if (storedProvider) setLlmProvider(storedProvider);
+    if (storedModel) setModelName(storedModel);
+  }, []);
+
+  function handleSaveSettings(provider: string, model: string) {
+    setLlmProvider(provider);
+    setModelName(model);
+    localStorage.setItem(SETTINGS_PROVIDER_KEY, provider);
+    localStorage.setItem(SETTINGS_MODEL_KEY, model);
+    setShowRerunConfirm(true);
+  }
+
+  async function handleRerun() {
+    const token = getStoredToken();
+    if (!token || !run?.website_url || rerunLoading) return;
+    setRerunLoading(true);
+    try {
+      const { run_id } = await createRun(run.website_url, token, llmProvider, modelName);
+      router.push(`/run/${run_id}`);
+    } catch {
+      setRerunLoading(false);
+    }
+  }
 
   useEffect(() => {
     const msgs = run?.chat_messages ?? [];
@@ -263,7 +301,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       chat_messages: [...prev.chat_messages, { role: "user", content: msg }],
     } : prev);
     try {
-      const { messages } = await chatRun(runId, msg);
+      const { messages } = await chatRun(runId, msg, getStoredToken() ?? undefined);
       prevMsgCountRef.current = 0; // force scroll on next update
       setRun((prev) => prev ? { ...prev, chat_messages: messages } : prev);
     } catch {
@@ -308,6 +346,17 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
         <UpgradeModal token={user.token} onClose={() => setShowUpgrade(false)} />
       )}
 
+      {showSettings && (
+        <SettingsModal
+          provider={llmProvider}
+          model={modelName}
+          isPro={user?.plan !== "free"}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettings(false)}
+          onUpgrade={user ? () => { setShowSettings(false); setShowUpgrade(true); } : undefined}
+        />
+      )}
+
       {/* Dark zone — seamless with header, no border/rounding */}
       <div className="flex-shrink-0 bg-bb-phantom pb-4">
         {runLoaded && (
@@ -320,6 +369,49 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             version={terminalVersion}
           />
         )}
+        {/* Rerun confirm bar — slides up after model switch */}
+        {showRerunConfirm && (
+          <div
+            className="mx-4 mb-2 flex items-center gap-3 px-4 py-2.5 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm"
+            style={{ animation: "rerunSlideUp 0.35s cubic-bezier(0.22,1,0.36,1) both" }}
+          >
+            <span className="flex-shrink-0 text-green-400 text-base leading-none">✓</span>
+            <span className="flex-1 min-w-0 text-white/80 text-xs leading-snug">
+              Switched to{" "}
+              <span className="font-mono font-semibold text-white">{modelName.split("/").pop()}</span>
+              {" "}· Start a new run with this model?
+            </span>
+            <button
+              type="button"
+              onClick={handleRerun}
+              disabled={rerunLoading || !run?.website_url}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-bb-phantom text-xs font-bold transition-all hover:bg-bb-cloud active:scale-[0.96] disabled:opacity-50 disabled:cursor-wait shadow-sm"
+            >
+              {rerunLoading ? (
+                <>
+                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeOpacity="0.25"/>
+                    <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M12 2a10 10 0 0 1 10 10"/>
+                  </svg>
+                  Launching…
+                </>
+              ) : (
+                <>New run 🐾</>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowRerunConfirm(false)}
+              className="flex-shrink-0 text-white/40 hover:text-white/80 transition-colors p-1 rounded"
+              aria-label="Dismiss"
+            >
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between mt-2 px-4">
           <div className="flex items-center gap-2">
             <PdfReportButton run={run} disabled={isLoading} />
@@ -335,10 +427,19 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             </button>
           </div>
           {run?.model_name && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white/60 text-[11px] font-mono">
+            <button
+              type="button"
+              onClick={() => setShowSettings(true)}
+              title="Switch model"
+              className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white text-[11px] font-mono transition-all duration-200 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 border border-transparent hover:border-white/15"
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-green-400/80 flex-shrink-0" />
               {run.llm_provider} · {run.model_name.split("/").pop()}
-            </span>
+              <svg className="w-3 h-3 ml-0.5 opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
           )}
         </div>
       </div>
@@ -517,7 +618,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                       </>
                     )}
                   </button>
-                  <style jsx>{`
+                  <style>{`
                     @keyframes sadSway {
                       0%, 100% { transform: rotate(-4deg) translateY(0px); }
                       50%       { transform: rotate(4deg) translateY(-3px); }
@@ -897,13 +998,20 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
         </DialogContent>
       </Dialog>
 
+      <style>{`
+        @keyframes rerunSlideUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* Footer */}
       <div className="flex flex-wrap items-center justify-center gap-4 py-3">
         <button
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.3.0
+          What&apos;s new in v2.4.0
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

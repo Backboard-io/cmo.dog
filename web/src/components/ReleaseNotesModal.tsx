@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.3.1",
+    version: "v2.4.0",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🛡️", text: "Guardrail mode toggle for admins — Off, On (block), or Suggest (soft redirect) for off-topic chat" },
+      { emoji: "🧰", text: "Admin diagnostics terminal + process monitor for quick server health checks" },
+      { emoji: "🔁", text: "Chat threads persist across restarts and the run page supports model switching + reruns" },
+    ],
+  },
+  {
+    version: "v2.3.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🪶", text: "Swapped sentence-transformers → fastembed (ONNX Runtime) — Docker image ~1 GB lighter, no PyTorch dependency" },
       { emoji: "🐳", text: "Intent guard model baked into Docker image at build time — zero network download on container startup" },
