@@ -88,6 +88,7 @@ export default function BillingPage() {
     let alive = true;
 
     async function load() {
+      if (!token) return;
       try {
         await syncSubscription(token);
       } catch {

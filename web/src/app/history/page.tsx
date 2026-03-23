@@ -431,7 +431,7 @@ export default function HistoryPage() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.4.2
+          What&apos;s new in v2.4.3
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

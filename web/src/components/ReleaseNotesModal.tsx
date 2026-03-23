@@ -9,9 +9,16 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.4.2",
+    version: "v2.4.3",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "💳", text: "Billing sync now guards against missing auth tokens on load" },
+    ],
+  },
+  {
+    version: "v2.4.2",
+    date: "Mar 2026",
     items: [
       { emoji: "💳", text: "Stripe sync now respects cancel-at-period-end and clears stale subscription IDs" },
       { emoji: "🧭", text: "Billing page self-heals by syncing subscription status on load" },
