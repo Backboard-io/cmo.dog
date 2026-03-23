@@ -62,9 +62,9 @@ export function PawPrints() {
               width="40"
               height="40"
               viewBox="0 0 100 100"
+              className="text-bb-phantom/25 dark:text-bb-phantomLight/20"
               style={{
                 display: "block",
-                color: "#1e2b3a",
                 opacity: 0,
                 animation: `pawFade 3.5s ${p.delay}s both`,
               }}

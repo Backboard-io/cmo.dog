@@ -1,6 +1,6 @@
 [project]
 name = "cmo-dog"
-version = "2.5.0"
+version = "2.5.1"
 description = "AI CMO Terminal — Backboard agents for traffic and users"
 requires-python = ">=3.11"
 dependencies = [

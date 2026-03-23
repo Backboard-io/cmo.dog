@@ -341,16 +341,16 @@ function EditUserModal({
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ animation: "overlayIn 0.2s ease both" }}
     >
-      <div className="absolute inset-0 bg-bb-phantom/40 backdrop-blur-[3px]" />
+      <div className="absolute inset-0 bg-bb-phantom/40 dark:bg-black/60 backdrop-blur-[3px]" />
       <div
-        className="relative w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl overflow-hidden dark:bg-bb-phantom dark:border dark:border-bb-steelDark"
         style={{ animation: "modalSpring 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}
       >
         {/* Hero header */}
-        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
+        <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100 dark:from-bb-phantom/80 dark:to-bb-phantom dark:border-bb-steelDark">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-90 transition-all focus:outline-none"
+            className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 active:scale-90 transition-all focus:outline-none dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom"
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
@@ -362,17 +362,17 @@ function EditUserModal({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatar} alt="" className="w-14 h-14 rounded-2xl object-cover shadow-md ring-2 ring-white shrink-0" />
             ) : (
-              <div className={`w-14 h-14 rounded-2xl ${bg} flex items-center justify-center text-lg font-bold text-gray-700 shadow-md ring-2 ring-white shrink-0`}>
+                <div className={`w-14 h-14 rounded-2xl ${bg} flex items-center justify-center text-lg font-bold text-gray-700 shadow-md ring-2 ring-white shrink-0 dark:text-bb-phantom`}>
                 {initials}
               </div>
             )}
             <div className="min-w-0">
-              <h2 className="text-base font-semibold text-bb-phantom leading-tight truncate">{user.name || "—"}</h2>
-              <p className="text-sm text-gray-400 truncate mt-0.5">{user.email}</p>
+              <h2 className="text-base font-semibold text-bb-phantom leading-tight truncate dark:text-bb-phantomLight">{user.name || "—"}</h2>
+              <p className="text-sm text-gray-400 truncate mt-0.5 dark:text-bb-phantomLight/60">{user.email}</p>
               <div className="flex items-center gap-1.5 mt-1.5">
                 {providerIcon(user.provider)}
                 {user.stripe_customer_id && (
-                  <span className="text-[10px] font-mono text-gray-300 truncate max-w-[140px]" title={user.stripe_customer_id}>
+                  <span className="text-[10px] font-mono text-gray-300 truncate max-w-[140px] dark:text-bb-phantomLight/50" title={user.stripe_customer_id}>
                     {user.stripe_customer_id}
                   </span>
                 )}
@@ -385,7 +385,7 @@ function EditUserModal({
         <div className="px-6 py-5 space-y-6">
           {/* Plan selector */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Plan</label>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 dark:text-bb-phantomLight/60">Plan</label>
             <div className="grid grid-cols-2 gap-2">
               {(["free", "pro"] as const).map((p) => (
                 <button
@@ -396,7 +396,7 @@ function EditUserModal({
                       ? p === "pro"
                         ? "border-violet-400 bg-violet-50 text-violet-700 shadow-md shadow-violet-100"
                         : "border-bb-blue/50 bg-bb-blue/5 text-bb-blue shadow-md shadow-bb-blue/10"
-                      : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-gray-100"
+                      : "border-gray-100 bg-gray-50 text-gray-400 hover:border-gray-200 hover:bg-gray-100 dark:border-bb-steelDark dark:bg-bb-phantom/60 dark:text-bb-phantomLight/60 dark:hover:bg-bb-phantom"
                     }`}
                 >
                   {p === "pro" ? (
@@ -427,12 +427,12 @@ function EditUserModal({
 
           {/* Prompts stepper */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Prompts used</label>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3 dark:text-bb-phantomLight/60">Prompts used</label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => adjustPrompts(-10)}
                 disabled={prompts === 0}
-                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all focus:outline-none"
+                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 active:scale-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all focus:outline-none dark:border-bb-steelDark dark:text-bb-phantomLight/70 dark:hover:bg-bb-phantom"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8h10" strokeLinecap="round" /></svg>
               </button>
@@ -441,11 +441,11 @@ function EditUserModal({
                 min={0}
                 value={prompts}
                 onChange={(e) => setPrompts(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                className="flex-1 text-center text-xl font-bold tabular-nums text-bb-phantom border-2 border-gray-100 rounded-xl px-3 py-2 focus:outline-none focus:border-bb-blue/40 focus:ring-2 focus:ring-bb-blue/10 transition-all"
+                className="flex-1 text-center text-xl font-bold tabular-nums text-bb-phantom border-2 border-gray-100 rounded-xl px-3 py-2 focus:outline-none focus:border-bb-blue/40 focus:ring-2 focus:ring-bb-blue/10 transition-all dark:text-bb-phantomLight dark:border-bb-steelDark dark:bg-bb-phantom/50"
               />
               <button
                 onClick={() => adjustPrompts(10)}
-                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 active:scale-90 transition-all focus:outline-none"
+                className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:border-gray-300 hover:bg-gray-50 active:scale-90 transition-all focus:outline-none dark:border-bb-steelDark dark:text-bb-phantomLight/70 dark:hover:bg-bb-phantom"
               >
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3 8h10" strokeLinecap="round" /></svg>
               </button>
@@ -453,14 +453,14 @@ function EditUserModal({
                 <button
                   onClick={() => setPrompts(0)}
                   title="Reset to 0"
-                  className="text-[10px] font-semibold text-gray-300 hover:text-red-400 transition-colors px-1 focus:outline-none"
+                  className="text-[10px] font-semibold text-gray-300 hover:text-red-400 transition-colors px-1 focus:outline-none dark:text-bb-phantomLight/40 dark:hover:text-red-300"
                   style={{ animation: "fadeIn 0.2s ease both" }}
                 >
                   reset
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-300 mt-2 text-center">Use +/− to adjust in steps of 10</p>
+            <p className="text-xs text-gray-300 mt-2 text-center dark:text-bb-phantomLight/50">Use +/− to adjust in steps of 10</p>
           </div>
         </div>
 
@@ -468,7 +468,7 @@ function EditUserModal({
         <div className="px-6 pb-6 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 hover:bg-gray-50 active:scale-[0.97] transition-all focus:outline-none"
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-500 hover:bg-gray-50 active:scale-[0.97] transition-all focus:outline-none dark:border-bb-steelDark dark:text-bb-phantomLight/70 dark:hover:bg-bb-phantom"
           >
             Cancel
           </button>
@@ -1232,9 +1232,9 @@ export default function AdminPage() {
       {/* Sub-header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
         <div>
-          <h1 className="text-base font-semibold text-bb-phantom">User Management</h1>
+          <h1 className="text-base font-semibold text-bb-phantom dark:text-bb-phantomLight">User Management</h1>
           {users !== null && (
-            <p className="text-xs text-bb-steel mt-0.5">
+            <p className="text-xs text-bb-steel mt-0.5 dark:text-bb-phantomLight/60">
               {users.length} user{users.length !== 1 ? "s" : ""} total
               {hasSelection && (
                 <span className="ml-1.5 text-red-400 font-semibold" style={{ animation: "fadeIn 0.15s ease both" }}>

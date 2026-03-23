@@ -45,7 +45,16 @@ function CircleProgress({ score, tone }: { score: number; tone: string }) {
         transform={`rotate(-90 ${cx} ${cx})`}
         style={{ transition: "stroke-dashoffset 0.6s ease" }}
       />
-      <text x={cx} y={cx} textAnchor="middle" dominantBaseline="central" fontSize="12" fontWeight="700" fill="#111827">
+      <text
+        x={cx}
+        y={cx}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="700"
+        fill="currentColor"
+        className="text-bb-phantom dark:text-bb-phantomLight"
+      >
         {score}
       </text>
     </svg>
@@ -64,20 +73,20 @@ function HealthRow({
   warn?: boolean;
 }) {
   const bg = warn
-    ? "bg-yellow-50"
+    ? "bg-yellow-50 dark:bg-yellow-500/10"
     : passed
-    ? "bg-green-50"
-    : "bg-red-50";
+    ? "bg-green-50 dark:bg-green-500/10"
+    : "bg-red-50 dark:bg-red-500/10";
   const iconColor = warn ? "text-yellow-400" : passed ? "text-green-500" : "text-red-400";
-  const valueColor = warn ? "text-yellow-600" : passed ? "text-green-600" : "text-red-500";
+  const valueColor = warn ? "text-yellow-600 dark:text-yellow-300" : passed ? "text-green-600 dark:text-green-300" : "text-red-500 dark:text-red-300";
 
   return (
     <li className={`flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-md ${bg}`}>
-      <span className={`flex items-center gap-1.5 min-w-0`}>
+      <span className="flex items-center gap-1.5 min-w-0">
         <span className={`${iconColor} text-xs flex-shrink-0 w-3 text-center`}>
           {warn ? "△" : passed ? "✓" : "✕"}
         </span>
-        <span className="text-xs text-gray-700 truncate">{name}</span>
+        <span className="text-xs text-gray-700 dark:text-bb-phantomLight truncate">{name}</span>
       </span>
       <span className={`text-xs font-medium flex-shrink-0 ${valueColor}`}>
         {value || (passed ? "OK" : "Missing")}
@@ -681,7 +690,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
             {activeTab === "passed" && (
               <div className="max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-gray-500 mb-3 dark:text-bb-phantomLight/60">
                   Passed Checks ({passedChecks.length})
                 </p>
                 <ul className="space-y-2">
@@ -689,12 +698,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     <li key={i} className="flex items-start gap-2 py-1.5 border-b border-bb-steel/30 last:border-0">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium text-gray-700">{c.name}</div>
-                        <div className="text-xs text-gray-500">{c.description}</div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-bb-phantomLight">{c.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-bb-phantomLight/60">{c.description}</div>
                       </div>
                     </li>
                   )) : (
-                    <li className="text-sm text-gray-400 py-6 text-center border border-dashed rounded-lg">
+                    <li className="text-sm text-gray-400 py-6 text-center border border-dashed rounded-lg dark:text-bb-phantomLight/60 dark:border-bb-steelDark">
                       {isLoading ? "Running checks…" : "No passed checks yet"}
                     </li>
                   )}
@@ -704,7 +713,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
             {activeTab === "links" && (
               <div className="max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
-                <p className="text-xs text-gray-500 mb-3">
+                <p className="text-xs text-gray-500 mb-3 dark:text-bb-phantomLight/60">
                   Failed / Issues ({failedChecks.length})
                 </p>
                 <ul className="space-y-2">
@@ -712,12 +721,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     <li key={i} className="flex items-start gap-2 py-1.5 border-b border-bb-steel/30 last:border-0">
                       <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-sm font-medium text-gray-700">{c.name}</div>
-                        <div className="text-xs text-gray-500">{c.description}</div>
+                        <div className="text-sm font-medium text-gray-700 dark:text-bb-phantomLight">{c.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-bb-phantomLight/60">{c.description}</div>
                       </div>
                     </li>
                   )) : (
-                    <li className="text-sm text-gray-400 py-6 text-center border border-dashed rounded-lg">
+                    <li className="text-sm text-gray-400 py-6 text-center border border-dashed rounded-lg dark:text-bb-phantomLight/60 dark:border-bb-steelDark">
                       {isLoading ? "Running checks…" : "No issues found"}
                     </li>
                   )}
@@ -727,7 +736,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
             {activeTab === "aigeo" && (
               <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
-                <p className="text-sm text-gray-500">AI/GEO analysis coming soon.</p>
+                <p className="text-sm text-gray-500 dark:text-bb-phantomLight/60">AI/GEO analysis coming soon.</p>
               </div>
             )}
           </div>
@@ -1016,7 +1025,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             onClick={() => setShowReleaseNotes(true)}
             className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
           >
-            What&apos;s new in v2.5.0
+            What&apos;s new in v2.5.1
           </button>
 
           <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>

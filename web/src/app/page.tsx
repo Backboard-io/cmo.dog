@@ -396,7 +396,7 @@ function HomeInner() {
             </span>
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-extrabold text-bb-phantom leading-[1.05] tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-extrabold text-bb-phantom leading-[1.05] tracking-tight dark:text-bb-phantomLight">
             Meet Onni.<br />
             <span
               className="hidden sm:block bg-gradient-to-r from-bb-blue via-purple-500 to-pink-500 bg-clip-text text-transparent"
@@ -422,15 +422,15 @@ function HomeInner() {
           style={{ animation: "fadeUp 0.45s 0.15s cubic-bezier(0.22,1,0.36,1) both" }}
         >
           <form onSubmit={handleSubmit} className="w-full">
-            <div className="flex items-center rounded-2xl border-2 border-bb-steel/20 bg-white overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] focus-within:border-bb-blue/40 focus-within:shadow-[0_4px_32px_rgba(0,123,252,0.12)] transition-all duration-200">
-              <span className="pl-5 text-bb-steel/40 text-sm select-none flex-shrink-0">https://</span>
+            <div className="flex items-center rounded-2xl border-2 border-bb-steel/20 bg-white overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.08)] focus-within:border-bb-blue/40 focus-within:shadow-[0_4px_32px_rgba(0,123,252,0.12)] transition-all duration-200 dark:bg-bb-phantom/60 dark:border-bb-steelDark">
+              <span className="pl-5 text-bb-steel/40 text-sm select-none flex-shrink-0 dark:text-bb-phantomLight/50">https://</span>
               <input
                 type="text"
                 placeholder="yourbusiness.com"
                 value={url}
                 onChange={(e) => { setUrl(e.target.value); setError(""); }}
                 disabled={loading}
-                className="flex-1 min-w-0 bg-transparent text-bb-phantom placeholder:text-gray-300 text-lg font-medium outline-none border-0 pl-1 pr-2 py-4"
+                className="flex-1 min-w-0 bg-transparent text-bb-phantom placeholder:text-gray-300 text-lg font-medium outline-none border-0 pl-1 pr-2 py-4 dark:text-bb-phantomLight dark:placeholder:text-bb-phantomLight/40"
                 aria-label="Website URL"
                 autoFocus
               />
@@ -438,7 +438,7 @@ function HomeInner() {
                 type="button"
                 onClick={() => setShowSettings(true)}
                 disabled={loading}
-                className="hidden sm:flex flex-shrink-0 text-bb-steel/40 hover:text-bb-phantom disabled:opacity-40 transition-colors p-2 rounded-xl hover:bg-bb-cloud"
+                className="hidden sm:flex flex-shrink-0 text-bb-steel/40 hover:text-bb-phantom disabled:opacity-40 transition-colors p-2 rounded-xl hover:bg-bb-cloud dark:text-bb-phantomLight/50 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom"
                 aria-label="Model settings"
                 title="Model settings"
               >
@@ -534,8 +534,8 @@ function HomeInner() {
         </div>
 
         {/* Feature pills + monthly monitor CTA */}
-        <div
-          className="hidden sm:flex flex-wrap justify-center gap-2 text-xs text-bb-steel"
+          <div
+          className="hidden sm:flex flex-wrap justify-center gap-2 text-xs text-bb-steel dark:text-bb-phantomLight/70"
           style={{ animation: "fadeUp 0.5s 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
         >
           {[
@@ -547,7 +547,7 @@ function HomeInner() {
           ].map((f) => (
             <span
               key={f.label}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-bb-steel/15 font-medium shadow-sm hover:border-bb-blue/20 hover:bg-bb-blue/[0.03] transition-colors cursor-default"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-bb-steel/15 font-medium shadow-sm hover:border-bb-blue/20 hover:bg-bb-blue/[0.03] transition-colors cursor-default dark:bg-bb-phantom/50 dark:border-bb-steelDark dark:hover:bg-bb-phantom"
             >
               <span>{f.icon}</span>
               {f.label}
@@ -557,11 +557,11 @@ function HomeInner() {
           {/* Monthly Monitor pill — actionable CTA */}
           <button
             onClick={() => setShowMonitor(true)}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-violet-200 font-medium shadow-sm hover:border-violet-400 hover:bg-violet-50 hover:shadow-[0_2px_12px_rgba(139,92,246,0.15)] transition-all active:scale-[0.97]"
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-violet-200 font-medium shadow-sm hover:border-violet-400 hover:bg-violet-50 hover:shadow-[0_2px_12px_rgba(139,92,246,0.15)] transition-all active:scale-[0.97] dark:bg-bb-phantom/50 dark:border-violet-500/40 dark:hover:bg-bb-phantom"
           >
             <span>📅</span>
-            <span className="text-violet-700 group-hover:text-violet-800 transition-colors">Monthly Monitor</span>
-            <span className="text-[9px] font-bold uppercase tracking-wide text-violet-500 bg-violet-100 group-hover:bg-violet-200 px-1.5 py-0.5 rounded-full leading-none transition-colors">Pro</span>
+            <span className="text-violet-700 group-hover:text-violet-800 transition-colors dark:text-violet-200">Monthly Monitor</span>
+            <span className="text-[9px] font-bold uppercase tracking-wide text-violet-500 bg-violet-100 group-hover:bg-violet-200 px-1.5 py-0.5 rounded-full leading-none transition-colors dark:text-violet-200 dark:bg-violet-500/30 dark:group-hover:bg-violet-500/40">Pro</span>
           </button>
         </div>
 
@@ -578,7 +578,7 @@ function HomeInner() {
             onClick={() => setShowReleaseNotes(true)}
             className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
           >
-            What&apos;s new in v2.5.0
+            What&apos;s new in v2.5.1
           </button>
 
           <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>

@@ -49,12 +49,13 @@ function ScoreRing({
           dominantBaseline="central"
           fontSize={size * 0.26}
           fontWeight="700"
-          fill="#111827"
+          fill="currentColor"
+          className="text-bb-phantom dark:text-bb-phantomLight"
         >
           {score}
         </text>
       </svg>
-      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide dark:text-bb-phantomLight/60">
         {label}
       </span>
     </div>
@@ -212,12 +213,12 @@ function RunCard({
 
   const issuesColor =
     auditEmpty
-      ? "text-orange-600 bg-orange-50 border-orange-200"
+      ? "text-orange-600 bg-orange-50 border-orange-200 dark:text-orange-200 dark:bg-orange-500/15 dark:border-orange-500/30"
       : run.issues_count === 0
-      ? "text-green-600 bg-green-50 border-green-200"
+      ? "text-green-600 bg-green-50 border-green-200 dark:text-green-200 dark:bg-green-500/15 dark:border-green-500/30"
       : run.issues_count <= 3
-      ? "text-amber-600 bg-amber-50 border-amber-200"
-      : "text-red-600 bg-red-50 border-red-200";
+      ? "text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-200 dark:bg-amber-500/15 dark:border-amber-500/30"
+      : "text-red-600 bg-red-50 border-red-200 dark:text-red-200 dark:bg-red-500/15 dark:border-red-500/30";
 
   const modelLabel = run.model_name
     ? run.model_name.includes("/")
@@ -436,7 +437,7 @@ export default function HistoryPage() {
             onClick={() => setShowReleaseNotes(true)}
             className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
           >
-            What&apos;s new in v2.5.0
+            What&apos;s new in v2.5.1
           </button>
 
           <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>

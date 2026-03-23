@@ -71,9 +71,9 @@ export function Header({ user }: HeaderProps) {
   }
 
   return (
-    <header className="flex items-center justify-between gap-4 bg-bb-phantom text-bb-phantomLight px-4 py-3 rounded-t-xl border-b border-bb-steelDark">
+    <header className="flex items-center justify-between gap-4 bg-bb-phantom text-bb-phantomLight px-4 py-3 rounded-t-xl border-b border-bb-steelDark shadow-[0_4px_18px_rgba(0,0,0,0.35)]">
       <div className="flex items-center gap-3">
-        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none">
+        <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity focus:outline-none">
           <PawIcon />
           <span className="font-semibold text-white">CMO.dog</span>
         </Link>

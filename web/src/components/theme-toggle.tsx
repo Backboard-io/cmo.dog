@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStoredToken, getUserPreferences, updateUserPreferences } from "@/lib/api";
 
 const THEME_KEY = "cmodog_theme";
 
@@ -16,10 +15,16 @@ function applyTheme(theme: Theme) {
   }
 }
 
-function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+function readStoredTheme(): Theme | null {
+  if (typeof window === "undefined") return null;
   const stored = window.localStorage.getItem(THEME_KEY);
-  return stored === "dark" ? "dark" : "light";
+  return stored === "dark" || stored === "light" ? stored : null;
+}
+
+function getPreferredTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  return prefersDark ? "dark" : "light";
 }
 
 export function ThemeToggle({
@@ -38,19 +43,20 @@ export function ThemeToggle({
 
   useEffect(() => {
     const stored = readStoredTheme();
-    setTheme(stored);
-    applyTheme(stored);
-    const token = getStoredToken();
-    if (!token) return;
-    getUserPreferences(token)
-      .then((prefs) => {
-        if (prefs?.theme && prefs.theme !== stored) {
-          setTheme(prefs.theme);
-          window.localStorage.setItem(THEME_KEY, prefs.theme);
-          applyTheme(prefs.theme);
-        }
-      })
-      .catch(() => {});
+    const initial = stored ?? getPreferredTheme();
+    setTheme(initial);
+    applyTheme(initial);
+
+    if (stored) return;
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!media) return;
+    const handler = (event: MediaQueryListEvent) => {
+      const next = event.matches ? "dark" : "light";
+      setTheme(next);
+      applyTheme(next);
+    };
+    media.addEventListener?.("change", handler);
+    return () => media.removeEventListener?.("change", handler);
   }, []);
 
   function handleToggle() {
@@ -58,9 +64,6 @@ export function ThemeToggle({
     setTheme(next);
     window.localStorage.setItem(THEME_KEY, next);
     applyTheme(next);
-    const token = getStoredToken();
-    if (!token) return;
-    updateUserPreferences(token, { theme: next }).catch(() => {});
   }
 
   return (

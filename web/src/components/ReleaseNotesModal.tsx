@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.5.0",
+    version: "v2.5.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🥶", text: "Delightful 404 page with Onni and clear next steps" },
+      { emoji: "☕️", text: "Global error screen with recovery actions and friendly copy" },
+      { emoji: "🌗", text: "Dark mode initialization now applies before the header loads" },
+    ],
+  },
+  {
+    version: "v2.5.0",
+    date: "Mar 2026",
     items: [
       { emoji: "🌗", text: "Dark mode toggle with Backboard-backed user preferences" },
       { emoji: "🧊", text: "Delightful contrast for cards across history, billing, run, and admin pages" },
@@ -183,25 +192,25 @@ export function ReleaseNotesModal({ onClose }: Props) {
         onClick={onClose}
       />
       <div
-        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden"
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden dark:bg-bb-phantom/90 dark:border dark:border-bb-steelDark"
         style={{ animation: "fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-bb-steel/10">
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-bb-steel/10 dark:border-bb-steelDark">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-bb-phantom flex items-center justify-center text-base">
+            <div className="w-8 h-8 rounded-full bg-bb-phantom flex items-center justify-center text-base dark:bg-bb-steelDark">
               🐾
             </div>
             <div>
-              <h2 className="text-base font-semibold text-bb-phantom leading-tight">
+              <h2 className="text-base font-semibold text-bb-phantom leading-tight dark:text-bb-phantomLight">
                 What&apos;s new in Onni
               </h2>
-              <p className="text-xs text-bb-steel">CMO.dog release notes</p>
+              <p className="text-xs text-bb-steel dark:text-bb-phantomLight/60">CMO.dog release notes</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-bb-steel hover:bg-bb-cloud transition-colors text-lg leading-none"
+            className="w-7 h-7 rounded-full flex items-center justify-center text-bb-steel hover:bg-bb-cloud transition-colors text-lg leading-none dark:text-bb-phantomLight/70 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom"
             aria-label="Close"
           >
             ×
@@ -213,19 +222,19 @@ export function ReleaseNotesModal({ onClose }: Props) {
           {RELEASES.map((release) => (
             <div key={release.version} className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-bb-phantom">
+                <span className="text-sm font-semibold text-bb-phantom dark:text-bb-phantomLight">
                   {release.version}
                 </span>
                 {release.label && (
-                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-bb-blue text-white uppercase tracking-wide">
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-bb-blue text-white uppercase tracking-wide dark:bg-bb-blue/80">
                     {release.label}
                   </span>
                 )}
-                <span className="text-xs text-bb-steel ml-auto">{release.date}</span>
+                <span className="text-xs text-bb-steel ml-auto dark:text-bb-phantomLight/60">{release.date}</span>
               </div>
               <ul className="space-y-2">
                 {release.items.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-sm text-bb-steel">
+                  <li key={i} className="flex items-start gap-2.5 text-sm text-bb-steel dark:text-bb-phantomLight/70">
                     <span className="mt-px text-base leading-none flex-shrink-0">
                       {item.emoji}
                     </span>
@@ -238,18 +247,18 @@ export function ReleaseNotesModal({ onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-bb-steel/10 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-bb-steel/10 flex items-center justify-between dark:border-bb-steelDark">
           <a
             href="https://github.com/backboard-io/cmo.dog/releases"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-bb-blue hover:underline"
+            className="text-xs text-bb-blue hover:underline dark:text-bb-phantomLight"
           >
             View all releases →
           </a>
           <button
             onClick={onClose}
-            className="text-xs text-bb-steel hover:text-bb-phantom transition-colors"
+            className="text-xs text-bb-steel hover:text-bb-phantom transition-colors dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
           >
             Dismiss
           </button>

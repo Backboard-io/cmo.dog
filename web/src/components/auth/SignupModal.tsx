@@ -101,7 +101,7 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
 
       {/* Modal */}
       <div
-        className="relative flex w-full max-w-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.4)]"
+        className="relative flex w-full max-w-2xl rounded-2xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.4)] dark:border dark:border-bb-steelDark"
         style={{ animation: "slideUp 0.35s cubic-bezier(0.22,1,0.36,1) both" }}
       >
         {/* LEFT — dark auth panel */}
@@ -143,14 +143,14 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
           </div>
 
           {/* Tab switcher */}
-          <div className="flex rounded-lg border border-white/10 overflow-hidden text-sm font-medium">
+          <div className="flex rounded-lg border border-white/10 overflow-hidden text-sm font-medium dark:border-bb-steelDark">
             <button
               type="button"
               onClick={() => switchTab("signup")}
               className={`flex-1 py-2 transition-colors ${
                 tab === "signup"
-                  ? "bg-white text-[#1a1a1a]"
-                  : "text-white/40 hover:text-white/70"
+                  ? "bg-white text-[#1a1a1a] dark:bg-bb-phantomLight dark:text-bb-phantom"
+                  : "text-white/40 hover:text-white/70 dark:text-bb-phantomLight/50 dark:hover:text-bb-phantomLight"
               }`}
             >
               Sign up
@@ -160,8 +160,8 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
               onClick={() => switchTab("login")}
               className={`flex-1 py-2 transition-colors ${
                 tab === "login"
-                  ? "bg-white text-[#1a1a1a]"
-                  : "text-white/40 hover:text-white/70"
+                  ? "bg-white text-[#1a1a1a] dark:bg-bb-phantomLight dark:text-bb-phantom"
+                  : "text-white/40 hover:text-white/70 dark:text-bb-phantomLight/50 dark:hover:text-bb-phantomLight"
               }`}
             >
               Log in
@@ -177,7 +177,7 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
               onChange={(e) => { setEmail(e.target.value); setError(""); }}
               disabled={loading}
               autoFocus
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:ring-2 focus:ring-white/20 focus:border-white/25 transition"
+              className="auth-input w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:ring-2 focus:ring-white/20 focus:border-white/25 transition dark:bg-bb-phantom dark:border-bb-steelDark dark:text-bb-phantomLight"
             />
             <input
               type="password"
@@ -185,7 +185,7 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(""); }}
               disabled={loading}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:ring-2 focus:ring-white/20 focus:border-white/25 transition"
+              className="auth-input w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/25 outline-none focus:ring-2 focus:ring-white/20 focus:border-white/25 transition dark:bg-bb-phantom dark:border-bb-steelDark dark:text-bb-phantomLight"
             />
 
             {error && (
@@ -195,7 +195,7 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-white text-[#1a1a1a] py-2.5 text-sm font-semibold disabled:opacity-50 hover:bg-white/90 active:scale-[0.98] transition-all"
+              className="w-full rounded-xl bg-white text-[#1a1a1a] py-2.5 text-sm font-semibold disabled:opacity-50 hover:bg-white/90 active:scale-[0.98] transition-all dark:bg-bb-blue dark:text-white dark:hover:bg-bb-blueDark"
             >
               {loading
                 ? tab === "signup" ? "Creating account…" : "Signing in…"
@@ -224,11 +224,11 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
         </div>
 
         {/* RIGHT — light value panel (hidden on mobile) */}
-        <div className="hidden sm:flex flex-col w-[48%] bg-white px-8 py-9 gap-6 relative">
+        <div className="hidden sm:flex flex-col w-[48%] bg-white px-8 py-9 gap-6 relative dark:bg-bb-phantom/80">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-gray-300 hover:text-gray-500 transition-colors p-1 rounded-lg hover:bg-gray-50"
+            className="absolute top-4 right-4 text-gray-300 hover:text-gray-500 transition-colors p-1 rounded-lg hover:bg-gray-50 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom"
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -242,18 +242,18 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/onni.png" alt="Onni" className="w-9 h-9 rounded-lg object-cover" />
               <div>
-                <p className="text-lg font-extrabold text-gray-900 leading-none tracking-tight">AI CMO</p>
-                <p className="text-sm text-gray-400 italic font-medium leading-none">for growth</p>
+                <p className="text-lg font-extrabold text-gray-900 leading-none tracking-tight dark:text-bb-phantomLight">AI CMO</p>
+                <p className="text-sm text-gray-400 italic font-medium leading-none dark:text-bb-phantomLight/60">for growth</p>
               </div>
             </div>
 
             {displayDomain ? (
-              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100">
+              <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 dark:bg-bb-phantom/60 dark:border-bb-steelDark">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                <span className="text-xs font-medium text-blue-700">Analyzing: <span className="font-bold">{displayDomain}</span></span>
+                <span className="text-xs font-medium text-blue-700 dark:text-bb-phantomLight">Analyzing: <span className="font-bold">{displayDomain}</span></span>
               </div>
             ) : (
-              <p className="text-sm text-gray-500 leading-relaxed mt-1">
+              <p className="text-sm text-gray-500 leading-relaxed mt-1 dark:text-bb-phantomLight/70">
                 The only agent you need for growth, marketing, and distribution.
               </p>
             )}
@@ -261,7 +261,7 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
 
           {/* Feature list */}
           <div className="flex flex-col gap-1">
-            <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2">
+            <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase mb-2 dark:text-bb-phantomLight/60">
               What you get
             </p>
             {(FEATURES as Feature[]).map((f) => (
@@ -269,21 +269,21 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
                 <span className="text-lg leading-none">{f.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-semibold text-gray-900 leading-none">{f.label}</p>
+                    <p className="text-sm font-semibold text-gray-900 leading-none dark:text-bb-phantomLight">{f.label}</p>
                     {f.pro && (
-                      <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full leading-none">Pro</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full leading-none dark:text-violet-200 dark:bg-violet-500/30">Pro</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 leading-snug mt-0.5">{f.desc}</p>
+                  <p className="text-xs text-gray-400 leading-snug mt-0.5 dark:text-bb-phantomLight/60">{f.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Free badge */}
-          <div className="mt-auto pt-4 border-t border-gray-100">
-            <p className="text-xs text-gray-400">
-              <span className="font-semibold text-gray-600">5 free analyses.</span> No credit card required.
+          <div className="mt-auto pt-4 border-t border-gray-100 dark:border-bb-steelDark">
+            <p className="text-xs text-gray-400 dark:text-bb-phantomLight/60">
+              <span className="font-semibold text-gray-600 dark:text-bb-phantomLight">5 free analyses.</span> No credit card required.
             </p>
           </div>
         </div>
@@ -297,6 +297,14 @@ export function SignupModal({ onSuccess, onClose, pendingDomain }: Props) {
         @keyframes slideUp {
           from { opacity: 0; transform: translateY(20px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        :global(.dark .auth-input:-webkit-autofill),
+        :global(.dark .auth-input:-webkit-autofill:hover),
+        :global(.dark .auth-input:-webkit-autofill:focus) {
+          -webkit-text-fill-color: #f5f6fa;
+          box-shadow: 0 0 0px 1000px #1e1e24 inset;
+          transition: background-color 9999s ease-in-out 0s;
         }
       `}</style>
     </div>
