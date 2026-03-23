@@ -11,6 +11,8 @@ import {
   type UserInfo,
 } from "@/lib/api";
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
+import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
+import { BackboardBadge } from "@/components/BackboardBadge";
 
 // ── Plan data ─────────────────────────────────────────────────────────────────
 
@@ -81,6 +83,7 @@ export default function BillingPage() {
   const [loadingCheckout, setLoadingCheckout] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [error, setError] = useState("");
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
   useEffect(() => {
     const token = getStoredToken();
@@ -312,6 +315,22 @@ export default function BillingPage() {
         </div>
 
       </div>
+      <div className="w-full flex flex-wrap items-center justify-center gap-4 py-3 border-t border-gray-100 bg-white">
+        <button
+          onClick={() => setShowReleaseNotes(true)}
+          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
+        >
+          What&apos;s new in v2.4.3
+        </button>
+
+        <span className="text-bb-steel/20 text-xs">·</span>
+
+        <BackboardBadge />
+      </div>
+
+      {showReleaseNotes && (
+        <ReleaseNotesModal onClose={() => setShowReleaseNotes(false)} />
+      )}
 
       <style jsx>{`
         @keyframes billingPageIn {

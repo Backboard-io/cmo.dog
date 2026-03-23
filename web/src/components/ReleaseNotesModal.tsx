@@ -9,9 +9,16 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.4.3",
+    version: "v2.4.4",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🔷", text: "Backboard badge now appears on the billing page footer" },
+    ],
+  },
+  {
+    version: "v2.4.3",
+    date: "Mar 2026",
     items: [
       { emoji: "💳", text: "Billing sync now guards against missing auth tokens on load" },
     ],
