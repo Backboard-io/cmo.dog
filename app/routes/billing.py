@@ -144,12 +144,14 @@ async def stripe_webhook(request: Request):
 
     elif event_type in ("customer.subscription.updated", "customer.subscription.deleted"):
         status = data_obj.get("status", "")
+        cancel_at_period_end = bool(data_obj.get("cancel_at_period_end", False))
         customer_id = data_obj.get("customer")
-        if status in ("canceled", "unpaid", "past_due"):
+        if status in ("canceled", "unpaid", "past_due") or cancel_at_period_end:
             user = await find_user_by_stripe_customer_id(customer_id)
             if user:
-                await update_user(user["user_id"], plan="free")
-                print(f"[billing] Reverted {customer_id} to free plan ({status})")
+                await update_user(user["user_id"], plan="free", stripe_subscription_id="")
+                reason = "cancel_at_period_end" if cancel_at_period_end else status
+                print(f"[billing] Reverted {customer_id} to free plan ({reason})")
 
     return {"received": True}
 
@@ -184,19 +186,27 @@ async def sync_subscription(x_user_token: str = Header(None)):
         return {"synced": False, "reason": "no_stripe_customer", "plan": user.get("plan", "free")}
 
     try:
-        subscriptions = stripe.Subscription.list(customer=customer_id, status="active", limit=1)
+        subscriptions = stripe.Subscription.list(customer=customer_id, status="all", limit=1)
         if subscriptions.data:
             sub = subscriptions.data[0]
-            await update_user(
-                user["user_id"],
-                plan="paid",
-                stripe_customer_id=customer_id,
-                stripe_subscription_id=sub.id,
-            )
-            print(f"[billing/sync] Synced {user['email']} to paid (sub={sub.id})")
-            return {"synced": True, "plan": "paid", "subscription_id": sub.id}
+            status = sub.get("status", "")
+            cancel_at_period_end = bool(sub.get("cancel_at_period_end", False))
+            if status == "active" and not cancel_at_period_end:
+                await update_user(
+                    user["user_id"],
+                    plan="paid",
+                    stripe_customer_id=customer_id,
+                    stripe_subscription_id=sub.id,
+                )
+                print(f"[billing/sync] Synced {user['email']} to paid (sub={sub.id})")
+                return {"synced": True, "plan": "paid", "subscription_id": sub.id}
+            await update_user(user["user_id"], plan="free", stripe_subscription_id="")
+            reason = "cancel_at_period_end" if cancel_at_period_end else status or "no_active_subscription"
+            print(f"[billing/sync] Synced {user['email']} to free ({reason})")
+            return {"synced": True, "plan": "free", "subscription_id": ""}
         else:
-            print(f"[billing/sync] No active subscription for {customer_id}")
-            return {"synced": False, "reason": "no_active_subscription", "plan": user.get("plan", "free")}
+            await update_user(user["user_id"], plan="free", stripe_subscription_id="")
+            print(f"[billing/sync] No subscription for {customer_id}")
+            return {"synced": True, "reason": "no_subscription", "plan": "free"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

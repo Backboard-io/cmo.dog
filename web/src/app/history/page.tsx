@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getHistory, getStoredToken, retryAudit, type RunSummary } from "@/lib/api";
+import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
+import { BackboardBadge } from "@/components/BackboardBadge";
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
@@ -346,6 +348,7 @@ export default function HistoryPage() {
   const [runs, setRuns] = useState<RunSummary[] | null>(null);
   const [error, setError] = useState("");
   const [token, setToken] = useState<string | null>(null);
+  const [showReleaseNotes, setShowReleaseNotes] = useState(false);
 
   useEffect(() => {
     const t = getStoredToken();
@@ -421,6 +424,24 @@ export default function HistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Footer — pinned to bottom of scroll container */}
+      <div className="w-full flex flex-wrap items-center justify-center gap-4 py-3 border-t border-gray-100 bg-white">
+        <button
+          onClick={() => setShowReleaseNotes(true)}
+          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
+        >
+          What&apos;s new in v2.4.2
+        </button>
+
+        <span className="text-bb-steel/20 text-xs">·</span>
+
+        <BackboardBadge />
+      </div>
+
+      {showReleaseNotes && (
+        <ReleaseNotesModal onClose={() => setShowReleaseNotes(false)} />
+      )}
 
       <style jsx>{`
         @keyframes pageIn {

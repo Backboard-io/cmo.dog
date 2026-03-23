@@ -7,6 +7,7 @@ import {
   getMe,
   createCheckout,
   createBillingPortal,
+  syncSubscription,
   type UserInfo,
 } from "@/lib/api";
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
@@ -84,11 +85,26 @@ export default function BillingPage() {
   useEffect(() => {
     const token = getStoredToken();
     if (!token) { router.replace("/"); return; }
+    let alive = true;
 
-    getMe(token)
-      .then(setUser)
-      .catch(() => {})
-      .finally(() => setLoadingUser(false));
+    async function load() {
+      try {
+        await syncSubscription(token);
+      } catch {
+        // Ignore sync errors; still attempt to load cached user state.
+      }
+      try {
+        const me = await getMe(token);
+        if (alive) setUser(me);
+      } catch {
+        // ignore
+      } finally {
+        if (alive) setLoadingUser(false);
+      }
+    }
+
+    load();
+    return () => { alive = false; };
   }, [router]);
 
   async function handlePortal() {

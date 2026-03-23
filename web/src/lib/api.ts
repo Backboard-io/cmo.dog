@@ -35,6 +35,7 @@ export type UserInfo = {
   plan: string;
   prompts_used: number;
   prompts_limit: number;
+  is_admin: boolean;
 };
 
 export const TOKEN_KEY = "cmodog_token";

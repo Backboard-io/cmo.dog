@@ -509,6 +509,14 @@ function HomeInner() {
                   )}
                   <button onClick={() => router.push("/history")} className="text-bb-blue hover:underline font-medium">History</button>
                   <button onClick={() => router.push("/billing")} className="text-bb-blue hover:underline font-medium">Billing</button>
+                  {user?.is_admin && (
+                    <button
+                      onClick={() => router.push("/admin")}
+                      className="text-bb-steel hover:text-bb-blue font-medium"
+                    >
+                      Admin
+                    </button>
+                  )}
                   <button onClick={() => { clearToken(); setUser(null); }} className="hover:text-red-500 transition-colors font-medium">Log out</button>
                 </div>
               </>
@@ -565,7 +573,7 @@ function HomeInner() {
           onClick={() => setShowReleaseNotes(true)}
           className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
         >
-          What&apos;s new in v2.4.1
+          What&apos;s new in v2.4.2
         </button>
 
         <span className="text-bb-steel/20 text-xs">·</span>

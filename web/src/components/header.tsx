@@ -105,7 +105,7 @@ export function Header({ user }: HeaderProps) {
           {open && (
             <div
               role="menu"
-              className="absolute right-0 mt-1.5 w-48 rounded-xl border border-bb-steelDark bg-bb-phantom shadow-xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+              className="absolute right-0 mt-1.5 w-48 rounded-xl bg-bb-phantom shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
             >
               <div className="px-3 py-2 border-b border-bb-steelDark mb-1">
                 <p className="text-xs text-bb-steel truncate">{user.email}</p>
@@ -115,7 +115,32 @@ export function Header({ user }: HeaderProps) {
                     : "Pro — unlimited"}
                 </p>
               </div>
-
+              {user?.is_admin && (
+                <Link
+                  href="/admin"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-0.5 w-full px-3 py-2 text-sm text-bb-phantomLight hover:bg-white/10 transition-colors"
+                >
+                  <svg
+                    width="25"
+                    height="25"
+                    viewBox="3 0 25 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <circle cx="8" cy="12" r="3.5" />
+                    <path d="M11.5 12h9" />
+                    <path d="M17 12v3" />
+                    <path d="M20 12v2" />
+                  </svg>
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/history"
                 role="menuitem"

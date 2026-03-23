@@ -41,6 +41,7 @@ class UserResponse(BaseModel):
     plan: str
     prompts_used: int
     prompts_limit: int
+    is_admin: bool
 
 
 def _to_response(user: dict) -> UserResponse:
@@ -53,6 +54,7 @@ def _to_response(user: dict) -> UserResponse:
         plan=plan,
         prompts_used=int(user.get("prompts_used", 0)),
         prompts_limit=limit,
+        is_admin=user.get("email", "").lower() in settings.admin_email_set,
     )
 
 

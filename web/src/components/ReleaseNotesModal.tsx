@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.4.1",
+    version: "v2.4.2",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "💳", text: "Stripe sync now respects cancel-at-period-end and clears stale subscription IDs" },
+      { emoji: "🧭", text: "Billing page self-heals by syncing subscription status on load" },
+      { emoji: "🛠️", text: "Admin users get a direct Admin link in the header menu and home actions" },
+    ],
+  },
+  {
+    version: "v2.4.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🛡️", text: "Guardrail mode now persists in Backboard storage — shared across deployments and instances" },
       { emoji: "✨", text: "Guardrail toggle polish — smoother visuals, gradients, and micro-interactions" },
