@@ -36,6 +36,11 @@ export type UserInfo = {
   prompts_used: number;
   prompts_limit: number;
   is_admin: boolean;
+  preferences: UserPreferences;
+};
+
+export type UserPreferences = {
+  theme: "light" | "dark";
 };
 
 export const TOKEN_KEY = "cmodog_token";
@@ -80,6 +85,27 @@ export function googleAuthUrl(): string {
 export async function getMe(token: string): Promise<UserInfo> {
   const res = await fetch(`${API_BASE}/api/auth/me`, {
     headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function getUserPreferences(token: string): Promise<UserPreferences> {
+  const res = await fetch(`${API_BASE}/api/users/preferences`, {
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function updateUserPreferences(
+  token: string,
+  preferences: UserPreferences,
+): Promise<UserPreferences> {
+  const res = await fetch(`${API_BASE}/api/users/preferences`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "x-user-token": token },
+    body: JSON.stringify(preferences),
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json();

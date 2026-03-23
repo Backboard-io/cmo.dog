@@ -13,6 +13,7 @@ import {
 import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { BackboardBadge } from "@/components/BackboardBadge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // ── Plan data ─────────────────────────────────────────────────────────────────
 
@@ -159,10 +160,10 @@ export default function BillingPage() {
       )}
 
       {/* Sub-header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0 bg-white/90 backdrop-blur dark:bg-bb-phantom/80 dark:border-bb-steelDark">
         <div>
-          <h1 className="text-base font-semibold text-bb-phantom">Billing & Plan</h1>
-          <p className="text-xs text-bb-steel mt-0.5">Manage your subscription and monthly monitors</p>
+          <h1 className="text-base font-semibold text-bb-phantom dark:text-bb-phantomLight">Billing & Plan</h1>
+          <p className="text-xs text-bb-steel dark:text-bb-phantomLight/60 mt-0.5">Manage your subscription and monthly monitors</p>
         </div>
         <button
           onClick={() => router.push("/")}
@@ -186,29 +187,29 @@ export default function BillingPage() {
 
         {/* ── Current plan hero ── */}
         <div
-          className={`rounded-2xl p-5 border ${
+          className={`rounded-2xl p-5 border shadow-sm ${
             isPro
               ? "bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200/60"
-              : "bg-bb-cloud border-bb-steel/10"
-          }`}
+              : "bg-bb-cloud/70 border-bb-steel/20"
+          } dark:bg-bb-phantom/40 dark:border-bb-steelDark dark:from-bb-phantom/40 dark:to-bb-phantom/80`}
           style={{ animation: "billingCardIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both" }}
         >
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="space-y-1">
               <div className="flex items-center gap-2.5">
                 <PlanBadge plan={user.plan} />
-                <span className="text-xs text-bb-steel">{user.email}</span>
+                <span className="text-xs text-bb-steel dark:text-bb-phantomLight/70">{user.email}</span>
               </div>
-              <p className="text-2xl font-extrabold text-bb-phantom mt-2">
+              <p className="text-2xl font-extrabold text-bb-phantom mt-2 dark:text-bb-phantomLight">
                 {isPro ? "Unlimited analyses" : `${promptsLeft} of ${user.prompts_limit} analyses left`}
               </p>
               {!isPro && (
-                <p className="text-sm text-bb-steel">
+                <p className="text-sm text-bb-steel dark:text-bb-phantomLight/70">
                   {user.prompts_used} used · {promptsLeft} remaining
                 </p>
               )}
               {isPro && (
-                <p className="text-sm text-bb-steel">
+                <p className="text-sm text-bb-steel dark:text-bb-phantomLight/70">
                   You&apos;re on Pro — Onni is unleashed 🐾
                 </p>
               )}
@@ -248,16 +249,16 @@ export default function BillingPage() {
           style={{ animation: "billingCardIn 0.4s 0.12s cubic-bezier(0.22,1,0.36,1) both" }}
         >
           {/* Free */}
-          <div className={`rounded-2xl border p-5 space-y-4 ${!isPro ? "border-bb-blue/40 ring-1 ring-bb-blue/15 bg-white" : "border-gray-200 bg-white"}`}>
+          <div className={`rounded-2xl border p-5 space-y-4 shadow-sm ${!isPro ? "border-bb-blue/40 ring-1 ring-bb-blue/15 bg-bb-cloud/70" : "border-gray-200 bg-bb-cloud/70"} dark:bg-bb-phantom/40 dark:border-bb-steelDark`}>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-bb-phantom">Free</span>
+              <span className="font-semibold text-bb-phantom dark:text-bb-phantomLight">Free</span>
               <div className="flex items-center gap-2">
                 {!isPro && (
                   <span className="text-[10px] font-bold uppercase tracking-widest bg-bb-blue/10 text-bb-blue px-2 py-0.5 rounded-full">Active</span>
                 )}
                 <div>
-                  <span className="text-xl font-bold text-bb-phantom">$0</span>
-                  <span className="text-sm text-bb-steel"> / mo</span>
+                  <span className="text-xl font-bold text-bb-phantom dark:text-bb-phantomLight">$0</span>
+                  <span className="text-sm text-bb-steel dark:text-bb-phantomLight/70"> / mo</span>
                 </div>
               </div>
             </div>
@@ -265,15 +266,15 @@ export default function BillingPage() {
               <button
                 onClick={handlePortal}
                 disabled={loadingPortal}
-                className="w-full rounded-lg border border-gray-200 bg-white text-bb-steel py-2 text-sm font-semibold hover:border-gray-300 hover:text-bb-phantom active:scale-[0.98] transition-all disabled:opacity-50"
+                className="w-full rounded-lg border border-gray-200 bg-white text-bb-steel py-2 text-sm font-semibold hover:border-gray-300 hover:text-bb-phantom active:scale-[0.98] transition-all disabled:opacity-50 dark:bg-bb-phantom dark:border-bb-steelDark dark:text-bb-phantomLight"
               >
                 {loadingPortal ? "Opening…" : "Downgrade to Free"}
               </button>
             )}
             <ul className="space-y-1.5">
               {FREE_FEATURES.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-bb-steel">
-                  <span className="text-bb-steel/40 flex-shrink-0">○</span>
+                <li key={f} className="flex items-center gap-2 text-sm text-bb-steel dark:text-bb-phantomLight/70">
+                  <span className="text-bb-steel/40 flex-shrink-0 dark:text-bb-phantomLight/40">○</span>
                   {f}
                 </li>
               ))}
@@ -281,16 +282,16 @@ export default function BillingPage() {
           </div>
 
           {/* Pro */}
-          <div className={`rounded-2xl border p-5 space-y-4 ${isPro ? "border-violet-300 ring-1 ring-violet-200/60 bg-gradient-to-br from-white to-violet-50/30" : "border-gray-200 bg-white hover:border-violet-200 transition-colors"}`}>
+          <div className={`rounded-2xl border p-5 space-y-4 shadow-sm ${isPro ? "border-violet-300 ring-1 ring-violet-200/60 bg-gradient-to-br from-white to-violet-50/30" : "border-gray-200 bg-bb-cloud/70 hover:border-violet-200 transition-colors"} dark:bg-bb-phantom/40 dark:border-bb-steelDark dark:from-bb-phantom/40 dark:to-bb-phantom/80`}>
             <div className="flex items-center justify-between gap-2">
-              <span className="font-semibold text-bb-phantom">Pro</span>
+              <span className="font-semibold text-bb-phantom dark:text-bb-phantomLight">Pro</span>
               <div className="flex items-center gap-2">
                 {isPro && (
                   <span className="text-[10px] font-bold uppercase tracking-widest bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full">Active</span>
                 )}
                 <div>
-                  <span className="text-xl font-bold text-bb-phantom">$5</span>
-                  <span className="text-sm text-bb-steel"> / mo</span>
+                  <span className="text-xl font-bold text-bb-phantom dark:text-bb-phantomLight">$5</span>
+                  <span className="text-sm text-bb-steel dark:text-bb-phantomLight/70"> / mo</span>
                 </div>
               </div>
             </div>
@@ -305,7 +306,7 @@ export default function BillingPage() {
             )}
             <ul className="space-y-1.5">
               {PRO_FEATURES.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-sm text-bb-steel">
+                <li key={f} className="flex items-center gap-2 text-sm text-bb-steel dark:text-bb-phantomLight/70">
                   <span className="text-bb-blue flex-shrink-0">✓</span>
                   {f}
                 </li>
@@ -315,17 +316,22 @@ export default function BillingPage() {
         </div>
 
       </div>
-      <div className="w-full flex flex-wrap items-center justify-center gap-4 py-3 border-t border-gray-100 bg-white">
-        <button
-          onClick={() => setShowReleaseNotes(true)}
-          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
-        >
-          What&apos;s new in v2.4.3
-        </button>
+      <div className="w-full relative border-t border-gray-100 bg-white dark:bg-bb-phantom/80 dark:border-bb-steelDark">
+        <div className="absolute left-5 top-1/2 -translate-y-1/2">
+          <ThemeToggle size="sm" />
+        </div>
+        <div className="mx-auto flex items-center justify-center gap-4 py-3">
+          <button
+            onClick={() => setShowReleaseNotes(true)}
+            className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
+          >
+            What&apos;s new in v2.5.0
+          </button>
 
-        <span className="text-bb-steel/20 text-xs">·</span>
+          <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>
 
-        <BackboardBadge />
+          <BackboardBadge />
+        </div>
       </div>
 
       {showReleaseNotes && (

@@ -36,9 +36,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${manrope.variable} ${spaceMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex items-center justify-center bg-bb-cloud p-6">
+      <body className="min-h-full flex items-center justify-center bg-bb-cloud dark:bg-bb-phantom p-6">
         <PawPrints />
-        <div className="relative z-[1] max-w-[86.4rem] w-full flex flex-col shadow-[0_20px_80px_rgba(0,0,0,0.25)] rounded-xl overflow-hidden bg-white h-[91vh]">
+        <div className="relative z-[1] max-w-[86.4rem] w-full flex flex-col shadow-[0_20px_80px_rgba(0,0,0,0.25)] rounded-xl overflow-hidden bg-white dark:bg-bb-steelDark h-[91vh]">
           <ConditionalHeader />
           <main className="flex flex-col flex-1 overflow-hidden">
             {children}

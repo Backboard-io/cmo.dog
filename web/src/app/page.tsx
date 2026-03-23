@@ -11,6 +11,7 @@ import { MonthlyMonitorModal } from "@/components/MonthlyMonitorModal";
 import { BackboardBadge } from "@/components/BackboardBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowUpRight } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SETTINGS_PROVIDER_KEY = "cmodog_llm_provider";
 const SETTINGS_MODEL_KEY = "cmodog_model_name";
@@ -568,17 +569,22 @@ function HomeInner() {
       </div>
 
       {/* Footer — pinned to bottom of scroll container */}
-      <div className="mt-auto w-full flex flex-wrap items-center justify-center gap-4 py-4">
-        <button
-          onClick={() => setShowReleaseNotes(true)}
-          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
-        >
-          What&apos;s new in v2.4.4
-        </button>
+      <div className="mt-auto w-full relative py-4">
+        <div className="absolute left-5 top-1/2 -translate-y-1/2">
+          <ThemeToggle size="sm" className="shadow-[0_6px_18px_rgba(0,0,0,0.12)]" />
+        </div>
+        <div className="mx-auto flex items-center justify-center gap-4">
+          <button
+            onClick={() => setShowReleaseNotes(true)}
+            className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
+          >
+            What&apos;s new in v2.5.0
+          </button>
 
-        <span className="text-bb-steel/20 text-xs">·</span>
+          <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>
 
-        <BackboardBadge />
+          <BackboardBadge />
+        </div>
       </div>
 
       <style jsx>{`

@@ -152,6 +152,9 @@ async def create_user(
         "prompts_used": 0,
         "stripe_customer_id": "",
         "stripe_subscription_id": "",
+        "preferences": {
+            "theme": "light",
+        },
     }
 
     if password:

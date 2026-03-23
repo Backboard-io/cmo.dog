@@ -17,6 +17,7 @@ import { UpgradeModal } from "@/components/billing/UpgradeModal";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { BackboardBadge } from "@/components/BackboardBadge";
 import { SettingsModal, FREE_PROVIDER, FREE_MODEL } from "@/components/SettingsModal";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const SETTINGS_PROVIDER_KEY = "cmodog_llm_provider";
 const SETTINGS_MODEL_KEY = "cmodog_model_name";
@@ -462,20 +463,20 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             accent="bg-bb-phantom"
           />
           <div className={`mt-2 flex max-lg:w-full flex-col gap-4 ${activeSection === "project" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-fit lg:flex-none lg:overflow-auto`}>
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4">
+          <div className="rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
             <div className="flex items-center gap-2 mb-2">
               <PawIcon className="w-6 h-6 text-bb-phantom" />
-              <h2 className="text-base font-semibold text-gray-900">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-bb-phantomLight">
                 {run?.project_name || "Project"}
               </h2>
             </div>
-            <p className="text-sm text-gray-600 line-clamp-6">
+            <p className="text-sm text-gray-600 line-clamp-6 dark:text-bb-phantomLight/70">
               {run?.project_description ? stripMarkdown(run.project_description) : "Gathering your product context…"}
             </p>
           </div>
 
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Documents</h3>
+          <div className="rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 dark:text-bb-phantomLight">Documents</h3>
             <ul className="space-y-1">
               {run?.documents?.length ? (
                 run.documents.map((doc) => (
@@ -487,33 +488,33 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                         else if (doc.title === "Product Information") setActiveDoc("product");
                         else if (doc.title === "Brand Voice") setActiveDoc("brand");
                       }}
-                      className="flex items-center justify-between w-full text-left py-2 px-3 rounded-lg border border-transparent hover:border-bb-steel/60 hover:bg-bb-cloud transition-colors group"
+                      className="flex items-center justify-between w-full text-left py-2 px-3 rounded-lg border border-transparent hover:border-bb-steel/60 hover:bg-bb-cloud transition-colors group dark:hover:bg-bb-phantom/40 dark:hover:border-bb-steelDark"
                     >
-                      <span className="flex items-center gap-2 text-sm text-gray-700">
-                        <span className="text-gray-400">📄</span>
+                      <span className="flex items-center gap-2 text-sm text-gray-700 dark:text-bb-phantomLight">
+                        <span className="text-gray-400 dark:text-bb-phantomLight/60">📄</span>
                         {doc.title}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight className="w-4 h-4 text-gray-400 dark:text-bb-phantomLight/60 group-hover:translate-x-0.5 transition-transform" />
                     </button>
                   </li>
                 ))
               ) : (
-                <li className="text-sm text-gray-500 py-5 border border-dashed border-bb-steel/60 rounded-lg text-center">
+                <li className="text-sm text-gray-500 py-5 border border-dashed border-bb-steel/60 rounded-lg text-center dark:text-bb-phantomLight/60 dark:border-bb-steelDark">
                   No documents yet
                 </li>
               )}
             </ul>
           </div>
 
-          <div className="rounded-xl border border-bb-steel/60 bg-white p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Competitors</h3>
+          <div className="rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3 dark:text-bb-phantomLight">Competitors</h3>
             <div className="flex flex-wrap gap-2">
               {run?.competitors?.map((c) => (
-                <span key={c.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-bb-steel/30 text-bb-phantom text-sm">
+                <span key={c.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-bb-steel/30 text-bb-phantom text-sm dark:bg-bb-phantom/60 dark:text-bb-phantomLight">
                   {c.name.replace(/\*\*/g, "")}
                 </span>
               ))}
-              <Button variant="outline" size="sm" className="rounded-full border-dashed border-bb-steel text-bb-phantom hover:bg-bb-cloud">
+              <Button variant="outline" size="sm" className="rounded-full border-dashed border-bb-steel text-bb-phantom hover:bg-bb-cloud dark:border-bb-steelDark dark:text-bb-phantomLight dark:hover:bg-bb-phantom/40">
                 <Plus className="w-4 h-4 mr-1" /> Add
               </Button>
             </div>
@@ -543,9 +544,9 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             accent="bg-blue-500"
           />
           <div className={`mt-2 flex max-lg:w-full flex-col gap-4 ${activeSection === "analytics" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1`}>
-          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-white p-4 max-lg:min-h-0 lg:min-h-0 lg:flex-1">
+          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 max-lg:min-h-0 lg:min-h-0 lg:flex-1 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-700">Analytics Overview</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-bb-phantomLight">Analytics Overview</h3>
               <div className="flex gap-1">
                 {tabs.map((t) => (
                   <button
@@ -555,7 +556,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     className={`px-3 py-1 text-xs rounded-md transition-colors ${
                       activeTab === t.key
                         ? "bg-bb-phantom text-white font-semibold"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-bb-cloud"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-bb-cloud dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom/50"
                     }`}
                   >
                     {t.label}
@@ -568,7 +569,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
               (isLoading || auditRetrying) ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                   <PawIcon className="w-14 h-14 text-bb-steel animate-pulse" />
-                  <p className="font-semibold text-gray-600 mt-3">Analyzing…</p>
+                  <p className="font-semibold text-gray-600 mt-3 dark:text-bb-phantomLight">Analyzing…</p>
                 </div>
               ) : !isLoading && (run?.analytics_overview ?? []).length === 0 && run?.status === "completed" ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center lg:flex-1 gap-3">
@@ -576,8 +577,8 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     <SadDogFace className="w-16 h-16" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-600">Woof… audit came up empty</p>
-                    <p className="text-xs text-gray-400 mt-1">The model didn&apos;t return valid scores.</p>
+                    <p className="text-sm font-semibold text-gray-600 dark:text-bb-phantomLight">Woof… audit came up empty</p>
+                    <p className="text-xs text-gray-400 mt-1 dark:text-bb-phantomLight/60">The model didn&apos;t return valid scores.</p>
                   </div>
                   <button
                     onClick={async () => {
@@ -630,12 +631,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                   {/* Page Speed */}
                   {(run?.analytics_overview ?? []).length > 0 && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Page Speed</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 dark:text-bb-phantomLight/60">Page Speed</p>
                       <div className="grid grid-cols-4 gap-2">
                         {(run?.analytics_overview ?? []).map((m) => (
                           <div key={m.key} className="flex flex-col items-center gap-1">
                             <CircleProgress score={m.score} tone={m.tone} />
-                            <span className="text-[11px] text-gray-500 text-center leading-tight">{m.label}</span>
+                            <span className="text-[11px] text-gray-500 text-center leading-tight dark:text-bb-phantomLight/60">{m.label}</span>
                           </div>
                         ))}
                       </div>
@@ -645,7 +646,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                   {/* SEO Health */}
                   {(failedChecks.length > 0 || passedChecks.length > 0) && (
                     <div>
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">SEO Health</p>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 dark:text-bb-phantomLight/60">SEO Health</p>
                       <ul className="space-y-1.5">
                         {failedChecks.map((c, i) => (
                           <HealthRow
@@ -670,7 +671,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
 
                   {/* Audit summary */}
                   {run?.audit_summary && failedChecks.length === 0 && passedChecks.length === 0 && (
-                    <div className="text-sm text-gray-600 leading-relaxed border-t border-bb-steel/40 pt-3">
+                    <div className="text-sm text-gray-600 leading-relaxed border-t border-bb-steel/40 pt-3 dark:text-bb-phantomLight/70 dark:border-bb-steelDark">
                       {run.audit_summary}
                     </div>
                   )}
@@ -750,18 +751,18 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             accent="bg-violet-600"
           />
           <div className={`mt-2 flex max-lg:w-full flex-col ${activeSection === "feed" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1 lg:overflow-auto`}>
-          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-white p-4 max-lg:min-h-0 lg:flex-1">
+          <div className="flex flex-col rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 max-lg:min-h-0 lg:flex-1 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-700 hidden lg:block">AI CMO Feed</h3>
-              <span className="text-xs text-gray-500">{feedItems.length} items</span>
+              <h3 className="text-sm font-semibold text-gray-700 hidden lg:block dark:text-bb-phantomLight">AI CMO Feed</h3>
+              <span className="text-xs text-gray-500 dark:text-bb-phantomLight/60">{feedItems.length} items</span>
             </div>
             {feedItems.length ? (
               <div className="space-y-2 max-lg:overflow-visible lg:flex-1 lg:overflow-auto">
                 {feedItems.map((item) => (
-                  <div key={item.id} className="rounded-lg border border-bb-steel/60 bg-bb-cloud/50 px-3 py-2 flex items-center justify-between gap-2">
+                  <div key={item.id} className="rounded-lg border border-bb-steel/60 bg-bb-cloud/50 px-3 py-2 flex items-center justify-between gap-2 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
                     <div className="min-w-0">
-                      <div className="text-sm font-medium text-gray-700 truncate">{item.title}</div>
-                      <div className="text-xs text-gray-500">{item.status}</div>
+                      <div className="text-sm font-medium text-gray-700 truncate dark:text-bb-phantomLight">{item.title}</div>
+                      <div className="text-xs text-gray-500 dark:text-bb-phantomLight/60">{item.status}</div>
                     </div>
                     <Button
                       size="sm"
@@ -777,11 +778,11 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             ) : (!run || isLoading) ? (
               <div className="flex flex-col items-center justify-center py-10 text-center lg:flex-1">
                 <PawIcon className="w-12 h-12 text-bb-steel animate-pulse" />
-                <p className="text-sm font-semibold text-gray-600 mt-3">Researching…</p>
-                <p className="text-xs text-gray-500">Scanning for opportunities</p>
+                <p className="text-sm font-semibold text-gray-600 mt-3 dark:text-bb-phantomLight">Researching…</p>
+                <p className="text-xs text-gray-500 dark:text-bb-phantomLight/60">Scanning for opportunities</p>
               </div>
             ) : (
-              <p className="text-sm text-gray-400 py-4 text-center border border-dashed rounded-lg">
+              <p className="text-sm text-gray-400 py-4 text-center border border-dashed rounded-lg dark:text-bb-phantomLight/60 dark:border-bb-steelDark">
                 No feed items yet
               </p>
             )}
@@ -818,17 +819,17 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
             </button>
           </div>
           <div className={`mt-2 flex max-lg:w-full flex-col ${activeSection === "chat" ? "" : "hidden"} lg:mt-0 lg:flex lg:min-h-0 lg:flex-1 lg:overflow-hidden`}>
-          <div className="flex min-h-0 flex-col rounded-xl border border-bb-steel/60 bg-white p-4 lg:flex-1">
+          <div className="flex min-h-0 flex-col rounded-xl border border-bb-steel/60 bg-bb-cloud/70 p-4 lg:flex-1 dark:bg-bb-phantom/40 dark:border-bb-steelDark">
             <div className="hidden lg:flex items-center gap-2 mb-3">
               <div className="relative flex-shrink-0">
                 <Image src="/onni.png" alt="Onni" width={28} height={28} className="rounded-full object-cover" />
                 <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-white" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-700">Chat with Onni</h3>
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-bb-phantomLight">Chat with Onni</h3>
               <button
                 type="button"
                 onClick={() => setChatModalOpen(true)}
-                className="ml-auto p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                className="ml-auto p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom/40"
                 title="Open in larger view"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -842,12 +843,12 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                       key={idx}
                       className={`rounded-lg px-3 py-2 text-sm ${
                         msg.role === "assistant"
-                          ? "bg-bb-cloud text-gray-700"
+                          ? "bg-bb-cloud text-gray-700 dark:bg-bb-phantom/60 dark:text-bb-phantomLight"
                           : "bg-bb-phantom text-bb-phantomLight ml-6"
                       }`}
                     >
                       {msg.role === "assistant" ? (
-                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-gray-800 prose-strong:text-gray-800 text-gray-700">
+                        <div className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-headings:text-gray-800 prose-strong:text-gray-800 text-gray-700 dark:prose-headings:text-bb-phantomLight dark:prose-strong:text-bb-phantomLight dark:text-bb-phantomLight/80">
                           <ReactMarkdown>{msg.content}</ReactMarkdown>
                         </div>
                       ) : (
@@ -856,7 +857,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     </div>
                   ))}
                   {chatSending && (
-                    <div className="rounded-lg px-3 py-2.5 text-sm bg-bb-cloud text-gray-700 w-fit">
+                    <div className="rounded-lg px-3 py-2.5 text-sm bg-bb-cloud text-gray-700 w-fit dark:bg-bb-phantom/60 dark:text-bb-phantomLight">
                       <span className="flex gap-1 items-center h-4">
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "0ms" }} />
                         <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-[typingDot_1.2s_ease-in-out_infinite]" style={{ animationDelay: "200ms" }} />
@@ -873,7 +874,7 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
                     onChange={(e) => setChatInput(e.target.value)}
                     placeholder="Ask your AI CMO…"
                     disabled={chatSending}
-                    className="flex-1 rounded-lg border border-bb-steel/60 bg-bb-cloud px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-bb-blue/20 disabled:opacity-50"
+                    className="flex-1 rounded-lg border border-bb-steel/60 bg-bb-cloud px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-bb-blue/20 disabled:opacity-50 dark:bg-bb-phantom/60 dark:border-bb-steelDark dark:text-bb-phantomLight dark:placeholder:text-bb-phantomLight/50"
                   />
                   <Button type="submit" size="sm" disabled={chatSending || !chatInput.trim()} className="bg-bb-phantom text-white hover:bg-bb-phantom/90 px-3">
                     <Send className="w-4 h-4" />
@@ -1006,17 +1007,22 @@ export default function RunPage({ params }: { params: Promise<{ runId: string }>
       `}</style>
 
       {/* Footer */}
-      <div className="flex flex-wrap items-center justify-center gap-4 py-3">
-        <button
-          onClick={() => setShowReleaseNotes(true)}
-          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
-        >
-          What&apos;s new in v2.4.4
-        </button>
+      <div className="relative py-3">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2">
+          <ThemeToggle size="sm" className="bg-bb-cloud/70 border-bb-steel/40 text-bb-phantom dark:bg-bb-phantom/60 dark:text-bb-phantomLight dark:border-bb-steelDark" />
+        </div>
+        <div className="mx-auto flex items-center justify-center gap-4">
+          <button
+            onClick={() => setShowReleaseNotes(true)}
+            className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
+          >
+            What&apos;s new in v2.5.0
+          </button>
 
-        <span className="text-bb-steel/20 text-xs">·</span>
+          <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>
 
-        <BackboardBadge />
+          <BackboardBadge />
+        </div>
       </div>
     </div>
   );

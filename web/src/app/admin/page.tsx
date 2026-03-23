@@ -11,8 +11,8 @@ import {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function planColor(plan: string) {
-  if (plan === "pro") return "bg-violet-100 text-violet-700 border-violet-200";
-  return "bg-gray-100 text-gray-500 border-gray-200";
+  if (plan === "pro") return "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-500/20 dark:text-violet-200 dark:border-violet-500/30";
+  return "bg-gray-100 text-gray-500 border-gray-200 dark:bg-bb-phantom/60 dark:text-bb-phantomLight/70 dark:border-bb-steelDark";
 }
 
 function providerIcon(provider: string) {
@@ -84,11 +84,11 @@ function StatsBar({ users }: { users: AdminUser[] }) {
       {stats.map(({ label, value, color }, i) => (
         <div
           key={label}
-          className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm"
+          className="rounded-2xl border border-gray-100 bg-bb-cloud/70 px-4 py-3 shadow-sm dark:border-bb-steelDark dark:bg-bb-phantom/40"
           style={{ animation: `cardIn 0.4s ${i * 60}ms cubic-bezier(0.22,1,0.36,1) both` }}
         >
-          <p className={`text-2xl font-bold tabular-nums ${color}`}>{value}</p>
-          <p className="text-xs text-gray-400 mt-0.5 font-medium">{label}</p>
+          <p className={`text-2xl font-bold tabular-nums ${color} dark:text-bb-phantomLight`}>{value}</p>
+          <p className="text-xs text-gray-400 mt-0.5 font-medium dark:text-bb-phantomLight/60">{label}</p>
         </div>
       ))}
     </div>
@@ -102,17 +102,17 @@ function SkeletonRow({ i }: { i: number }) {
     <tr className="animate-pulse" style={{ animationDelay: `${i * 50}ms` }}>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-gray-100 shrink-0 dark:bg-bb-phantom/60" />
           <div className="space-y-1.5">
-            <div className="h-3 bg-gray-100 rounded w-32" />
-            <div className="h-2.5 bg-gray-100 rounded w-24" />
+            <div className="h-3 bg-gray-100 rounded w-32 dark:bg-bb-phantom/60" />
+            <div className="h-2.5 bg-gray-100 rounded w-24 dark:bg-bb-phantom/60" />
           </div>
         </div>
       </td>
-      <td className="px-4 py-3"><div className="h-5 bg-gray-100 rounded-full w-12" /></td>
-      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-8" /></td>
-      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-16" /></td>
-      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-10" /></td>
+      <td className="px-4 py-3"><div className="h-5 bg-gray-100 rounded-full w-12 dark:bg-bb-phantom/60" /></td>
+      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-8 dark:bg-bb-phantom/60" /></td>
+      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-16 dark:bg-bb-phantom/60" /></td>
+      <td className="px-4 py-3"><div className="h-3 bg-gray-100 rounded w-10 dark:bg-bb-phantom/60" /></td>
       <td className="w-12" />
     </tr>
   );
@@ -522,8 +522,8 @@ function UserRow({
 }) {
   return (
     <tr
-      className={`group border-b border-gray-50 transition-all duration-200
-        ${isSelected ? "bg-red-50/60" : "hover:bg-gray-50/60"}
+      className={`group border-b border-gray-50 transition-all duration-200 dark:border-bb-steelDark
+        ${isSelected ? "bg-red-50/60 dark:bg-red-500/15" : "hover:bg-gray-50/60 dark:hover:bg-bb-phantom/40"}
         ${isDeleting ? "pointer-events-none" : ""}
       `}
       style={{
@@ -542,10 +542,10 @@ function UserRow({
             onToggle={onToggleSelect}
           />
           <div className="min-w-0">
-            <p className="text-sm font-medium text-bb-phantom truncate leading-tight">
+            <p className="text-sm font-medium text-bb-phantom truncate leading-tight dark:text-bb-phantomLight">
               {user.name || "—"}
             </p>
-            <p className="text-xs text-gray-400 truncate">{user.email}</p>
+            <p className="text-xs text-gray-400 truncate dark:text-bb-phantomLight/60">{user.email}</p>
           </div>
         </div>
       </td>
@@ -559,7 +559,7 @@ function UserRow({
 
       {/* Prompts used */}
       <td className="px-4 py-3">
-        <span className="text-sm tabular-nums text-bb-phantom font-medium">{user.prompts_used ?? 0}</span>
+        <span className="text-sm tabular-nums text-bb-phantom font-medium dark:text-bb-phantomLight">{user.prompts_used ?? 0}</span>
       </td>
 
       {/* Provider */}
@@ -568,8 +568,8 @@ function UserRow({
       </td>
 
       {/* Stripe */}
-      <td className="px-4 py-3 text-xs text-gray-400 font-mono truncate max-w-[120px]">
-        {user.stripe_customer_id || <span className="italic text-gray-300">—</span>}
+      <td className="px-4 py-3 text-xs text-gray-400 font-mono truncate max-w-[120px] dark:text-bb-phantomLight/60">
+        {user.stripe_customer_id || <span className="italic text-gray-300 dark:text-bb-phantomLight/40">—</span>}
       </td>
 
       {/* Edit button */}
@@ -577,7 +577,7 @@ function UserRow({
         <button
           onClick={() => onEdit(user)}
           title="Edit user"
-          className="p-1.5 rounded-lg text-gray-300 hover:text-bb-blue hover:bg-bb-blue/8 active:scale-90 opacity-0 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-bb-blue/30"
+          className="p-1.5 rounded-lg text-gray-300 hover:text-bb-blue hover:bg-bb-blue/8 active:scale-90 opacity-0 group-hover:opacity-100 transition-all duration-150 focus:outline-none focus:opacity-100 focus:ring-2 focus:ring-bb-blue/30 dark:text-bb-phantomLight/40"
           aria-label={`Edit ${user.email}`}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
@@ -689,7 +689,7 @@ function GuardrailToggle({ token }: { token: string }) {
 
   return (
     <div
-      className={`rounded-2xl border ${colors.border} ${colors.bg} p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md`}
+      className={`rounded-2xl border ${colors.border} ${colors.bg} p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:bg-bb-phantom/40 dark:border-bb-steelDark`}
       style={{ animation: "cardIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both" }}
     >
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -698,7 +698,7 @@ function GuardrailToggle({ token }: { token: string }) {
           <div className={`w-1.5 h-1.5 rounded-full ${colors.dot} transition-colors duration-300`}
             style={mode === "on" ? { animation: "pulse 2s ease-in-out infinite" } : undefined}
           />
-          <span className="text-sm font-semibold text-bb-phantom">Guardrail Mode</span>
+          <span className="text-sm font-semibold text-bb-phantom dark:text-bb-phantomLight">Guardrail Mode</span>
           {savedFlash && (
             <span
               className="flex items-center gap-1 text-xs text-emerald-600 font-medium"
@@ -718,7 +718,7 @@ function GuardrailToggle({ token }: { token: string }) {
         </div>
 
         {/* 3-segment sliding toggle */}
-        <div className="relative flex items-center bg-white rounded-xl border border-gray-200 p-0.5 shadow-sm gap-0 w-full sm:w-[360px]">
+        <div className="relative flex items-center bg-white rounded-xl border border-gray-200 p-0.5 shadow-sm gap-0 w-full sm:w-[360px] dark:bg-bb-phantom/60 dark:border-bb-steelDark">
           {/* Sliding pill — accounts for 4px total inset (p-0.5 each side) */}
           {mode && (
             <div
@@ -740,7 +740,7 @@ function GuardrailToggle({ token }: { token: string }) {
                 disabled={saving || mode === null}
                 aria-pressed={isActive}
                 className={`relative z-10 flex flex-1 justify-center items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] text-xs font-semibold transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-bb-blue/40 focus-visible:ring-offset-1 select-none transition-transform active:scale-[0.98]
-                  ${isActive ? "text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50/70"}
+                  ${isActive ? "text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50/70 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight dark:hover:bg-bb-phantom/40"}
                   ${saving ? "cursor-wait" : "cursor-pointer"}
                 `}
               >
@@ -1331,15 +1331,15 @@ export default function AdminPage() {
         )}
 
         {!error && (
-          <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+          <div className="rounded-2xl border border-gray-100 bg-bb-cloud/70 shadow-sm overflow-hidden dark:border-bb-steelDark dark:bg-bb-phantom/40">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">User</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Plan</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Prompts</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Provider</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Stripe ID</th>
+                <tr className="border-b border-gray-100 bg-gray-50/50 dark:border-bb-steelDark dark:bg-bb-phantom/60">
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide dark:text-bb-phantomLight/60">User</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide dark:text-bb-phantomLight/60">Plan</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide dark:text-bb-phantomLight/60">Prompts</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide dark:text-bb-phantomLight/60">Provider</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide dark:text-bb-phantomLight/60">Stripe ID</th>
                   <th className="w-12" />
                 </tr>
               </thead>

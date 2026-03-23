@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.4.4",
+    version: "v2.5.0",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🌗", text: "Dark mode toggle with Backboard-backed user preferences" },
+      { emoji: "🧊", text: "Delightful contrast for cards across history, billing, run, and admin pages" },
+      { emoji: "🧭", text: "Footer layout unified with centered version + badge" },
+    ],
+  },
+  {
+    version: "v2.4.4",
+    date: "Mar 2026",
     items: [
       { emoji: "🔷", text: "Backboard badge now appears on the billing page footer" },
     ],

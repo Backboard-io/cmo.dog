@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 
 from app.config import settings
+from app.schemas import UserPreferences
 from app.services.user_service import (
     create_user,
     find_user_by_email,
@@ -42,11 +43,13 @@ class UserResponse(BaseModel):
     prompts_used: int
     prompts_limit: int
     is_admin: bool
+    preferences: UserPreferences
 
 
 def _to_response(user: dict) -> UserResponse:
     plan = user.get("plan", "free")
     limit = settings.free_prompts_limit if plan == "free" else -1
+    prefs = user.get("preferences") or {}
     return UserResponse(
         user_id=user["user_id"],
         token=user["token"],
@@ -55,6 +58,7 @@ def _to_response(user: dict) -> UserResponse:
         prompts_used=int(user.get("prompts_used", 0)),
         prompts_limit=limit,
         is_admin=user.get("email", "").lower() in settings.admin_email_set,
+        preferences=UserPreferences(theme=prefs.get("theme") or "light"),
     )
 
 

@@ -1,7 +1,7 @@
 """Pydantic schemas for API request/response and run state."""
 
 from pydantic import BaseModel, Field, HttpUrl
-from typing import Optional
+from typing import Literal, Optional
 
 
 class RunCreate(BaseModel):
@@ -88,3 +88,7 @@ class RunStatus(BaseModel):
     llm_provider: str = "openrouter"
     model_name: str = "anthropic/claude-sonnet-4-5"
     terminal_log: list[str] = Field(default_factory=list)
+
+
+class UserPreferences(BaseModel):
+    theme: Literal["light", "dark"] = "light"

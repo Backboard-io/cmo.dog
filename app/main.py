@@ -26,6 +26,7 @@ from app.routes.auth import router as auth_router
 from app.routes.billing import router as billing_router
 from app.routes.admin import router as admin_router
 from app.routes.monitors import router as monitors_router
+from app.routes.preferences import router as preferences_router
 from app.services.monitor_scheduler import start_scheduler, stop_scheduler
 from app.services.intent_guard import check_intent, warmup as intent_guard_warmup
 from app.guardrail_state import get_mode as get_guardrail_mode
@@ -67,6 +68,7 @@ app.include_router(auth_router)
 app.include_router(billing_router)
 app.include_router(admin_router)
 app.include_router(monitors_router)
+app.include_router(preferences_router)
 
 
 @app.get("/health")

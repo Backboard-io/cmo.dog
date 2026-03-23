@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getHistory, getStoredToken, retryAudit, type RunSummary } from "@/lib/api";
 import { ReleaseNotesModal } from "@/components/ReleaseNotesModal";
 import { BackboardBadge } from "@/components/BackboardBadge";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // ─── Score ring ───────────────────────────────────────────────────────────────
 
@@ -65,21 +66,21 @@ function ScoreRing({
 function SkeletonCard({ i }: { i: number }) {
   return (
     <div
-      className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm animate-pulse"
+      className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm animate-pulse dark:border-bb-steelDark dark:bg-bb-phantom/40"
       style={{ animationDelay: `${i * 80}ms` }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-2">
-          <div className="h-4 bg-gray-100 rounded w-3/4" />
-          <div className="h-3 bg-gray-100 rounded w-1/2" />
+          <div className="h-4 bg-gray-100 rounded w-3/4 dark:bg-bb-phantom/60" />
+          <div className="h-3 bg-gray-100 rounded w-1/2 dark:bg-bb-phantom/60" />
         </div>
-        <div className="h-6 w-14 bg-gray-100 rounded-full" />
+        <div className="h-6 w-14 bg-gray-100 rounded-full dark:bg-bb-phantom/60" />
       </div>
       <div className="mt-4 flex gap-4">
         {[...Array(4)].map((_, k) => (
           <div key={k} className="flex flex-col items-center gap-1">
-            <div className="w-11 h-11 rounded-full bg-gray-100" />
-            <div className="h-2 w-10 bg-gray-100 rounded" />
+            <div className="w-11 h-11 rounded-full bg-gray-100 dark:bg-bb-phantom/60" />
+            <div className="h-2 w-10 bg-gray-100 rounded dark:bg-bb-phantom/60" />
           </div>
         ))}
       </div>
@@ -237,7 +238,7 @@ function RunCard({
 
   return (
     <div
-      className="group w-full text-left rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      className="group w-full text-left rounded-2xl border border-gray-100 bg-bb-cloud/70 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden dark:border-bb-steelDark dark:bg-bb-phantom/40"
       style={{ animation: `cardIn 0.4s ${index * 60}ms cubic-bezier(0.22,1,0.36,1) both` }}
     >
       {/* Clickable main area */}
@@ -251,19 +252,19 @@ function RunCard({
         {/* Header row */}
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-bb-phantom truncate group-hover:text-bb-blue transition-colors">
+            <p className="text-sm font-semibold text-bb-phantom truncate group-hover:text-bb-blue transition-colors dark:text-bb-phantomLight">
               {run.project_name || domain}
             </p>
-            <p className="text-xs text-bb-steel truncate mt-0.5">{domain}</p>
+            <p className="text-xs text-bb-steel truncate mt-0.5 dark:text-bb-phantomLight/60">{domain}</p>
           </div>
           <div className="flex flex-col items-end gap-1 flex-shrink-0">
             <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${issuesColor}`}>
               {issuesLabel}
             </span>
-            <span className="text-[10px] text-gray-400">{dateLabel}</span>
+            <span className="text-[10px] text-gray-400 dark:text-bb-phantomLight/50">{dateLabel}</span>
             {modelLabel && (
               <span
-                className="text-[10px] text-bb-steel/70 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px]"
+                className="text-[10px] text-bb-steel/70 bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded font-mono truncate max-w-[120px] dark:bg-bb-phantom dark:border-bb-steelDark dark:text-bb-phantomLight/70"
                 title={run.model_name}
               >
                 {modelLabel}
@@ -279,8 +280,8 @@ function RunCard({
               <SadDogFace className="w-12 h-12 flex-shrink-0" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-600">Woof… nothing came back</p>
-              <p className="text-xs text-gray-400 mt-0.5">The model returned an empty audit.</p>
+              <p className="text-sm font-semibold text-gray-600 dark:text-bb-phantomLight">Woof… nothing came back</p>
+              <p className="text-xs text-gray-400 mt-0.5 dark:text-bb-phantomLight/60">The model returned an empty audit.</p>
             </div>
           </div>
         ) : (
@@ -368,11 +369,11 @@ export default function HistoryPage() {
       style={{ animation: "pageIn 0.35s cubic-bezier(0.22,1,0.36,1) both" }}
     >
       {/* Sub-header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-white/90 backdrop-blur dark:bg-bb-phantom/80 dark:border-bb-steelDark">
         <div>
-          <h1 className="text-base font-semibold text-bb-phantom">Run History</h1>
+          <h1 className="text-base font-semibold text-bb-phantom dark:text-bb-phantomLight">Run History</h1>
           {runs !== null && (
-            <p className="text-xs text-bb-steel mt-0.5">
+            <p className="text-xs text-bb-steel dark:text-bb-phantomLight/60 mt-0.5">
               {runs.length === 0
                 ? "No analyses yet"
                 : `${runs.length} report${runs.length === 1 ? "" : "s"} saved`}
@@ -426,17 +427,22 @@ export default function HistoryPage() {
       </div>
 
       {/* Footer — pinned to bottom of scroll container */}
-      <div className="w-full flex flex-wrap items-center justify-center gap-4 py-3 border-t border-gray-100 bg-white">
-        <button
-          onClick={() => setShowReleaseNotes(true)}
-          className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20"
-        >
-          What&apos;s new in v2.4.4
-        </button>
+      <div className="w-full relative border-t border-gray-100 bg-white dark:bg-bb-phantom/80 dark:border-bb-steelDark">
+        <div className="absolute left-5 top-1/2 -translate-y-1/2">
+          <ThemeToggle size="sm" />
+        </div>
+        <div className="mx-auto flex items-center justify-center gap-4 py-3">
+          <button
+            onClick={() => setShowReleaseNotes(true)}
+            className="text-[11px] text-bb-steel/50 hover:text-bb-steel transition-colors underline underline-offset-2 decoration-bb-steel/20 dark:text-bb-phantomLight/60 dark:hover:text-bb-phantomLight"
+          >
+            What&apos;s new in v2.5.0
+          </button>
 
-        <span className="text-bb-steel/20 text-xs">·</span>
+          <span className="text-bb-steel/20 text-xs dark:text-bb-phantomLight/30">·</span>
 
-        <BackboardBadge />
+          <BackboardBadge />
+        </div>
       </div>
 
       {showReleaseNotes && (
