@@ -83,6 +83,7 @@ class RunStatus(BaseModel):
     feed_items: list[FeedItem] = Field(default_factory=list)
     chat_status: str = "loading"
     chat_messages: list[ChatMessage] = Field(default_factory=list)
+    chat_thread_id: Optional[str] = None
     credits: int = 2000
     llm_provider: str = "openrouter"
     model_name: str = "anthropic/claude-sonnet-4-5"

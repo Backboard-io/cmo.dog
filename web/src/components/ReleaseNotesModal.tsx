@@ -9,9 +9,18 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.4.0",
+    version: "v2.4.1",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🛡️", text: "Guardrail mode now persists in Backboard storage — shared across deployments and instances" },
+      { emoji: "✨", text: "Guardrail toggle polish — smoother visuals, gradients, and micro-interactions" },
+      { emoji: "🧵", text: "Admin shell streaming endpoint for real-time diagnostics output" },
+    ],
+  },
+  {
+    version: "v2.4.0",
+    date: "Mar 2026",
     items: [
       { emoji: "🛡️", text: "Guardrail mode toggle for admins — Off, On (block), or Suggest (soft redirect) for off-topic chat" },
       { emoji: "🧰", text: "Admin diagnostics terminal + process monitor for quick server health checks" },

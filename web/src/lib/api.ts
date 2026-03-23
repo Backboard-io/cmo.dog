@@ -160,10 +160,13 @@ export async function retryAudit(
 export async function chatRun(
   runId: string,
   message: string,
+  token?: string,
 ): Promise<{ messages: RunStatus["chat_messages"] }> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["x-user-token"] = token;
   const res = await fetch(`${API_BASE}/api/runs/${runId}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ message }),
   });
   if (!res.ok) throw new Error(await res.text());
@@ -280,4 +283,53 @@ export async function deleteMonitor(token: string, monitorId: string): Promise<v
     headers: { "x-user-token": token },
   });
   if (!res.ok) throw new Error(await res.text());
+}
+
+export async function runShellCommand(
+  command: string,
+  token: string,
+): Promise<{ session_id: string }> {
+  const res = await fetch(`${API_BASE}/api/admin/shell`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-user-token": token },
+    body: JSON.stringify({ command }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export interface ProcessInfo {
+  user: string;
+  pid: string;
+  cpu: number;
+  mem: number;
+  command: string;
+}
+
+export async function getProcesses(token: string): Promise<{ processes: ProcessInfo[] }> {
+  const res = await fetch(`${API_BASE}/api/admin/ps`, {
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export type GuardrailMode = "off" | "on" | "suggest";
+
+export async function getGuardrailMode(token: string): Promise<{ mode: GuardrailMode }> {
+  const res = await fetch(`${API_BASE}/api/admin/guardrails`, {
+    headers: { "x-user-token": token },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function setGuardrailMode(token: string, mode: GuardrailMode): Promise<{ mode: GuardrailMode }> {
+  const res = await fetch(`${API_BASE}/api/admin/guardrails`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "x-user-token": token },
+    body: JSON.stringify({ mode }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }

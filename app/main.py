@@ -28,6 +28,7 @@ from app.routes.admin import router as admin_router
 from app.routes.monitors import router as monitors_router
 from app.services.monitor_scheduler import start_scheduler, stop_scheduler
 from app.services.intent_guard import check_intent, warmup as intent_guard_warmup
+from app.guardrail_state import get_mode as get_guardrail_mode
 from app.services.user_service import find_user_by_token, update_user
 from app.services.run_history_service import list_runs, get_run_detail
 from pydantic import BaseModel as PydanticBaseModel
@@ -221,26 +222,44 @@ _INTENT_REJECTION = (
     "those lines!"
 )
 
+_SUGGEST_PREFIX = (
+    "[SYSTEM NOTE: The following message may be off-topic for a CMO/marketing "
+    "assistant. Hard redirect the user to relevant marketing, SEO, or brand "
+    "topics while briefly acknowledging their question.]\n\n"
+)
+
 
 @app.post("/api/runs/{run_id}/chat")
-async def chat(run_id: str, body: ChatRequest):
+async def chat(run_id: str, body: ChatRequest, x_user_token: str = Header(None)):
     run = orchestrator.get_run(run_id)
+    if not run and x_user_token:
+        user = await find_user_by_token(x_user_token)
+        if user:
+            run = await orchestrator.ensure_run_in_memory(
+                run_id, user_id=user["user_id"], plan=user.get("plan", "free")
+            )
     if not run:
         raise HTTPException(status_code=404, detail="Run not found")
 
-    in_scope, score = await check_intent(body.message)
-    print(f"[intent_guard] run={run_id} score={score:.3f} in_scope={in_scope} msg={body.message[:60]!r}")
+    mode = await get_guardrail_mode()
+    effective_message = body.message
 
-    if not in_scope:
-        run.chat_messages.append(ChatMessage(role="user", content=body.message))
-        run.chat_messages.append(ChatMessage(role="assistant", content=_INTENT_REJECTION))
-        return {"messages": run.chat_messages}
+    if mode != "off":
+        in_scope, score = await check_intent(body.message)
+        print(f"[intent_guard] run={run_id} mode={mode} score={score:.3f} in_scope={in_scope} msg={body.message[:60]!r}")
+
+        if not in_scope:
+            if mode == "on":
+                run.chat_messages.append(ChatMessage(role="user", content=body.message))
+                run.chat_messages.append(ChatMessage(role="assistant", content=_INTENT_REJECTION))
+                return {"messages": run.chat_messages}
+            elif mode == "suggest":
+                effective_message = _SUGGEST_PREFIX + body.message
 
     run.chat_messages.append(ChatMessage(role="user", content=body.message))
     try:
-        reply = await orchestrator.chat_reply(run_id, body.message)
+        reply = await orchestrator.chat_reply(run_id, effective_message)
     except Exception as exc:
-        # Remove the user message we optimistically appended so state stays clean
         run.chat_messages.pop()
         print(f"[chat] chat_reply failed for run {run_id}: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))

@@ -20,4 +20,4 @@ trap cleanup EXIT SIGINT SIGTERM
 
 docker build -t backboard-cmo-app .
 docker run -d --name backboard-cmo-app --env-file .env -p 8000:8000 backboard-cmo-app
-docker logs -f backboard-cmo-app
+docker logs -f backboard-cmo-app 2>/dev/null || true

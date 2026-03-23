@@ -2,7 +2,11 @@
 
 import { useEffect, useCallback, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { getStoredToken, listUsers, patchUser, bulkDeleteUsers, type AdminUser } from "@/lib/api";
+import {
+  getStoredToken, listUsers, patchUser, bulkDeleteUsers, runShellCommand, getProcesses,
+  getGuardrailMode, setGuardrailMode,
+  type AdminUser, type GuardrailMode, type ProcessInfo,
+} from "@/lib/api";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -609,10 +613,510 @@ function EmptyState() {
   );
 }
 
+// ─── Guardrail Toggle ─────────────────────────────────────────────────────────
+
+const GUARDRAIL_MODES: { id: GuardrailMode; label: string; description: string; icon: React.ReactNode }[] = [
+  {
+    id: "off",
+    label: "Off",
+    description: "No guardrails — all messages reach the LLM unchanged.",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="M9 12l2 2 4-4" opacity="0" />
+        <path d="M8 8l8 8M16 8l-8 8" />
+      </svg>
+    ),
+  },
+  {
+    id: "on",
+    label: "On",
+    description: "Hard block — off-topic messages are rejected with a redirect message.",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    ),
+  },
+  {
+    id: "suggest",
+    label: "Suggest",
+    description: "Soft nudge — off-topic messages reach the LLM with a system hint to redirect.",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 16v-4M12 8h.01" />
+      </svg>
+    ),
+  },
+];
+
+const GUARDRAIL_COLORS: Record<GuardrailMode, { pill: string; text: string; border: string; bg: string; dot: string }> = {
+  off:     { pill: "bg-gradient-to-r from-gray-400 to-gray-500",   text: "text-gray-600",   border: "border-gray-200", bg: "bg-gray-50",   dot: "bg-gray-400" },
+  on:      { pill: "bg-gradient-to-r from-amber-400 to-amber-600", text: "text-amber-700",  border: "border-amber-200", bg: "bg-amber-50",  dot: "bg-amber-500" },
+  suggest: { pill: "bg-gradient-to-r from-bb-blue to-bb-blueDark", text: "text-bb-blue",    border: "border-blue-200",  bg: "bg-blue-50",   dot: "bg-bb-blue" },
+};
+
+function GuardrailToggle({ token }: { token: string }) {
+  const [mode, setMode] = useState<GuardrailMode | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+  const activeIdx = mode ? GUARDRAIL_MODES.findIndex((m) => m.id === mode) : 1;
+
+  useEffect(() => {
+    getGuardrailMode(token)
+      .then((r) => setMode(r.mode))
+      .catch(() => setMode("on"));
+  }, [token]);
+
+  async function handleSelect(next: GuardrailMode) {
+    if (next === mode || saving) return;
+    setMode(next);
+    setSaving(true);
+    try {
+      await setGuardrailMode(token, next);
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1800);
+    } catch {
+      // noop — optimistic update stays
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const colors = GUARDRAIL_COLORS[mode ?? "on"];
+
+  return (
+    <div
+      className={`rounded-2xl border ${colors.border} ${colors.bg} p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md`}
+      style={{ animation: "cardIn 0.4s 0.05s cubic-bezier(0.22,1,0.36,1) both" }}
+    >
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        {/* Label + status */}
+        <div className="flex items-center gap-2.5">
+          <div className={`w-1.5 h-1.5 rounded-full ${colors.dot} transition-colors duration-300`}
+            style={mode === "on" ? { animation: "pulse 2s ease-in-out infinite" } : undefined}
+          />
+          <span className="text-sm font-semibold text-bb-phantom">Guardrail Mode</span>
+          {savedFlash && (
+            <span
+              className="flex items-center gap-1 text-xs text-emerald-600 font-medium"
+              style={{ animation: "fadeIn 0.2s ease both" }}
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                <path d="M3 8l3.5 3.5 6.5-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Saved
+            </span>
+          )}
+          {saving && (
+            <svg className="w-3.5 h-3.5 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+            </svg>
+          )}
+        </div>
+
+        {/* 3-segment sliding toggle */}
+        <div className="relative flex items-center bg-white rounded-xl border border-gray-200 p-0.5 shadow-sm gap-0 w-full sm:w-[360px]">
+          {/* Sliding pill — accounts for 4px total inset (p-0.5 each side) */}
+          {mode && (
+            <div
+              className={`absolute top-0.5 bottom-0.5 rounded-[10px] ${colors.pill} shadow-md ring-1 ring-white/30 transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]`}
+              style={{
+                width: `calc((100% - 4px) / 3)`,
+                left: `calc(2px + ${activeIdx} * (100% - 4px) / 3)`,
+              }}
+              aria-hidden
+            />
+          )}
+
+          {GUARDRAIL_MODES.map(({ id, label, icon }) => {
+            const isActive = mode === id;
+            return (
+              <button
+                key={id}
+                onClick={() => handleSelect(id)}
+                disabled={saving || mode === null}
+                aria-pressed={isActive}
+                className={`relative z-10 flex flex-1 justify-center items-center gap-1.5 px-3.5 py-1.5 rounded-[10px] text-xs font-semibold transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-bb-blue/40 focus-visible:ring-offset-1 select-none transition-transform active:scale-[0.98]
+                  ${isActive ? "text-white" : "text-gray-400 hover:text-gray-600 hover:bg-gray-50/70"}
+                  ${saving ? "cursor-wait" : "cursor-pointer"}
+                `}
+              >
+                {icon}
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Description */}
+      {mode && (
+        <p
+          key={mode}
+          className={`mt-2.5 text-xs ${colors.text} leading-relaxed transition-colors duration-300`}
+          style={{ animation: "fadeIn 0.25s ease both" }}
+        >
+          {GUARDRAIL_MODES.find((m) => m.id === mode)?.description}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─── Diagnostics Terminal ─────────────────────────────────────────────────────
+
+const QUICK_CMDS = [
+  { label: "uptime", cmd: "uptime" },
+  { label: "disk", cmd: "df -h" },
+  { label: "memory", cmd: "free -h 2>/dev/null || vm_stat" },
+  { label: "network", cmd: "netstat -an 2>/dev/null | grep LISTEN | head -20 || ss -tlnp 2>/dev/null | head -20" },
+  { label: "env (safe)", cmd: "env | grep -vE 'KEY|SECRET|TOKEN|PASSWORD|PASS|OPENAI|STRIPE|BACKBOARD'" },
+  { label: "python", cmd: "python3 --version && pip show fastapi 2>/dev/null | head -3" },
+];
+
+function DiagnosticsTerminal({ token }: { token: string }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [lines, setLines] = useState<string[]>([]);
+  const [running, setRunning] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+  const [histIdx, setHistIdx] = useState(-1);
+  const outputRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const esRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    if (open && outputRef.current) {
+      outputRef.current.scrollTop = outputRef.current.scrollHeight;
+    }
+  }, [lines, open]);
+
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 50);
+  }, [open]);
+
+  function clearTerminal() {
+    esRef.current?.close();
+    setLines([]);
+    setRunning(false);
+  }
+
+  async function submit(cmd: string) {
+    const command = cmd.trim();
+    if (!command || running) return;
+
+    esRef.current?.close();
+    setLines((prev) => [...prev, `$ ${command}`, ""]);
+    setRunning(true);
+    setHistory((h) => [command, ...h.filter((x) => x !== command)].slice(0, 50));
+    setHistIdx(-1);
+    setInput("");
+
+    let sessionId: string;
+    try {
+      const res = await runShellCommand(command, token);
+      sessionId = res.session_id;
+    } catch (e) {
+      setLines((prev) => [...prev, `[error] ${e instanceof Error ? e.message : String(e)}`]);
+      setRunning(false);
+      return;
+    }
+
+    const es = new EventSource(`/stream/admin-shell/${sessionId}`);
+    esRef.current = es;
+
+    es.onmessage = (e) => {
+      try {
+        const { line } = JSON.parse(e.data) as { line: string };
+        setLines((prev) => [...prev, line]);
+        if (line.startsWith("\n[exit")) {
+          es.close();
+          setRunning(false);
+        }
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    es.onerror = () => {
+      es.close();
+      setRunning(false);
+    };
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      submit(input);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const next = Math.min(histIdx + 1, history.length - 1);
+      setHistIdx(next);
+      setInput(history[next] ?? "");
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = Math.max(histIdx - 1, -1);
+      setHistIdx(next);
+      setInput(next === -1 ? "" : (history[next] ?? ""));
+    } else if (e.key === "c" && e.ctrlKey) {
+      esRef.current?.close();
+      setLines((prev) => [...prev, "^C"]);
+      setRunning(false);
+    }
+  }
+
+  function lineColor(line: string) {
+    if (line.startsWith("$ ")) return "text-cyan-400 font-semibold";
+    if (line.startsWith("[exit 0]") || line.includes("exit 0")) return "text-emerald-400";
+    if (line.startsWith("[exit") || line.startsWith("[error]")) return "text-red-400";
+    if (line === "") return "h-3 block";
+    return "text-green-300";
+  }
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs font-mono text-gray-500 hover:text-cyan-400 hover:border-gray-700 transition-all group focus:outline-none"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+          <polyline points="3 5 6 8 3 11" /><line x1="9" y1="11" x2="13" y2="11" />
+        </svg>
+        <span>admin shell</span>
+        {running && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
+        <span className="ml-auto text-gray-700 group-hover:text-gray-600 text-[10px]">expand ↓</span>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-gray-800 shadow-xl"
+      style={{ animation: "cardIn 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 border-b border-gray-800">
+        <span className="w-3 h-3 rounded-full bg-red-500/80" />
+        <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
+        <span className="w-3 h-3 rounded-full bg-green-500/80" />
+        <span className="ml-3 text-xs text-gray-400 font-mono select-none flex-1">diagnostics — admin shell</span>
+        {running && (
+          <span className="flex items-center gap-1.5 text-xs text-amber-400 font-mono">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            running
+          </span>
+        )}
+        <button onClick={clearTerminal} title="Clear" className="text-gray-600 hover:text-gray-300 transition-colors ml-1 focus:outline-none">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M2 4h12M5 4V2h6v2M6 7v5M10 7v5M3 4l1 10h8l1-10" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <button onClick={() => setOpen(false)} title="Collapse" className="text-gray-600 hover:text-gray-300 transition-colors ml-1 focus:outline-none">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M4 10l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 px-4 py-2 bg-gray-950 border-b border-gray-800/60">
+        {QUICK_CMDS.map(({ label, cmd }) => (
+          <button
+            key={label}
+            onClick={() => submit(cmd)}
+            disabled={running}
+            className="px-2.5 py-0.5 rounded-md text-[11px] font-mono bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 transition-all focus:outline-none"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        ref={outputRef}
+        onClick={() => inputRef.current?.focus()}
+        className="h-64 overflow-y-auto bg-gray-950 px-4 py-3 font-mono text-[12.5px] leading-5 cursor-text"
+      >
+        {lines.length === 0 && (
+          <p className="text-gray-600 italic select-none">Type a command or pick a quick action above…</p>
+        )}
+        {lines.map((line, i) => (
+          <div key={i} className={lineColor(line)}>{line || "\u00a0"}</div>
+        ))}
+        {running && <span className="inline-block w-2 h-4 bg-green-400 align-middle animate-pulse ml-0.5" />}
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 border-t border-gray-800">
+        <span className="text-cyan-400 font-mono text-sm select-none">$</span>
+        <input
+          ref={inputRef}
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          disabled={running}
+          placeholder="enter command…"
+          spellCheck={false}
+          autoComplete="off"
+          className="flex-1 bg-transparent font-mono text-sm text-green-300 placeholder-gray-700 focus:outline-none disabled:opacity-50"
+        />
+        <button
+          onClick={() => submit(input)}
+          disabled={running || !input.trim()}
+          className="px-3 py-1 rounded-lg text-xs font-mono bg-gray-800 text-gray-400 hover:bg-cyan-900/50 hover:text-cyan-300 disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 transition-all focus:outline-none"
+        >
+          run ↵
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Process Monitor ──────────────────────────────────────────────────────────
+
+function cpuBarColor(pct: number) {
+  if (pct >= 50) return "bg-red-500";
+  if (pct >= 15) return "bg-yellow-500";
+  return "bg-green-500";
+}
+
+function memBarColor(pct: number) {
+  if (pct >= 30) return "bg-red-400";
+  if (pct >= 10) return "bg-yellow-400";
+  return "bg-blue-400";
+}
+
+function MiniBar({ pct, colorClass }: { pct: number; colorClass: string }) {
+  const width = Math.min(100, Math.max(0, pct));
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${colorClass}`}
+          style={{ width: `${width}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-mono text-gray-500 w-8 text-right tabular-nums">{pct.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function ProcessMonitor({ token }: { token: string }) {
+  const [open, setOpen] = useState(false);
+  const [processes, setProcesses] = useState<ProcessInfo[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
+  const [fetchError, setFetchError] = useState("");
+
+  useEffect(() => {
+    if (!open) return;
+
+    setLoading(true);
+    setHasFetched(false);
+    setFetchError("");
+
+    async function refresh() {
+      setLoading(true);
+      try {
+        const data = await getProcesses(token);
+        setProcesses(data.processes);
+        setFetchError("");
+        setHasFetched(true);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setFetchError(msg || "Request failed — check server logs");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    refresh();
+    const id = setInterval(refresh, 3000);
+    return () => clearInterval(id);
+  }, [open, token]);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2.5 w-full px-4 py-2.5 rounded-xl bg-gray-950 border border-gray-800 text-xs font-mono text-gray-500 hover:text-green-400 hover:border-gray-700 transition-all group focus:outline-none"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
+          <rect x="1" y="10" width="3" height="5" rx="0.5" /><rect x="6" y="6" width="3" height="9" rx="0.5" /><rect x="11" y="2" width="3" height="13" rx="0.5" />
+        </svg>
+        <span>process monitor</span>
+        <span className="ml-auto text-gray-700 group-hover:text-gray-600 text-[10px]">expand ↓</span>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-2xl overflow-hidden border border-gray-800 shadow-xl"
+      style={{ animation: "cardIn 0.3s cubic-bezier(0.22,1,0.36,1) both" }}
+    >
+      <div className="flex items-center gap-2.5 px-4 py-2.5 bg-gray-900 border-b border-gray-800">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#4ade80" strokeWidth="1.6" aria-hidden>
+          <rect x="1" y="10" width="3" height="5" rx="0.5" /><rect x="6" y="6" width="3" height="9" rx="0.5" /><rect x="11" y="2" width="3" height="13" rx="0.5" />
+        </svg>
+        <span className="text-xs text-gray-400 font-mono select-none flex-1">process monitor</span>
+        <span className="text-[10px] text-gray-700 font-mono">auto-refresh 3s</span>
+        {loading && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
+        <button onClick={() => setOpen(false)} title="Collapse" className="text-gray-600 hover:text-gray-300 transition-colors ml-1 focus:outline-none">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M4 10l4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="bg-gray-950 max-h-80 overflow-y-auto">
+        {fetchError && (
+          <p className="text-xs text-red-400 font-mono px-4 py-3">[error] {fetchError}</p>
+        )}
+        {!fetchError && (
+          <table className="w-full text-[11.5px] font-mono">
+            <thead className="sticky top-0 bg-gray-900/95 backdrop-blur-sm">
+              <tr className="border-b border-gray-800 text-gray-600">
+                <th className="px-4 py-2 text-left font-medium w-14">PID</th>
+                <th className="px-2 py-2 text-left font-medium w-16">USER</th>
+                <th className="px-2 py-2 text-left font-medium w-36">CPU %</th>
+                <th className="px-2 py-2 text-left font-medium w-36">MEM %</th>
+                <th className="px-2 py-2 text-left font-medium">COMMAND</th>
+              </tr>
+            </thead>
+            <tbody>
+              {!hasFetched && loading && (
+                <tr><td colSpan={5} className="text-center py-8 text-gray-600 font-mono text-[11px]">
+                  <span className="animate-pulse">fetching processes…</span>
+                </td></tr>
+              )}
+              {hasFetched && processes.slice(0, 25).map((p) => (
+                <tr key={p.pid} className="border-b border-gray-800/40 hover:bg-gray-900/60 transition-colors">
+                  <td className="px-4 py-1.5 text-gray-600 tabular-nums">{p.pid}</td>
+                  <td className="px-2 py-1.5 text-gray-500 truncate max-w-[56px]">{p.user}</td>
+                  <td className="px-2 py-1.5"><MiniBar pct={p.cpu} colorClass={cpuBarColor(p.cpu)} /></td>
+                  <td className="px-2 py-1.5"><MiniBar pct={p.mem} colorClass={memBarColor(p.mem)} /></td>
+                  <td className="px-2 py-1.5 text-green-300/80 truncate max-w-[280px]" title={p.command}>
+                    {p.command.split("/").pop() || p.command}
+                  </td>
+                </tr>
+              ))}
+              {hasFetched && processes.length === 0 && (
+                <tr><td colSpan={5} className="text-center py-8 text-gray-700">no processes returned</td></tr>
+              )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
@@ -639,6 +1143,7 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
+    setMounted(true);
     const token = getStoredToken();
     if (!token) { router.replace("/"); return; }
     loadUsers(token);
@@ -778,6 +1283,17 @@ export default function AdminPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        {/* Guardrail toggle — always shown for admins */}
+        {mounted && !isForbidden && !error && token && <GuardrailToggle token={token} />}
+
+        {/* Diagnostics panels — collapsible, default closed */}
+        {mounted && !isForbidden && !error && token && (
+          <div className="space-y-2">
+            <DiagnosticsTerminal token={token} />
+            <ProcessMonitor token={token} />
+          </div>
+        )}
+
         {/* Forbidden state */}
         {isForbidden && (
           <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">

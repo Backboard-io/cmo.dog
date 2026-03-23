@@ -590,8 +590,17 @@ async def chat_reply(run_id: str, message: str) -> str:
     assistant_id = _run_user_assistants.get(run_id) or _assistant_id("BACKBOARD_ASSISTANT_AUDIT")
 
     if run_id not in _chat_threads:
-        thread = await client.create_thread(assistant_id)
-        _chat_threads[run_id] = str(thread.thread_id)
+        run = _runs.get(run_id)
+        if run and run.chat_thread_id:
+            # Restore from persisted thread_id (e.g. after server restart)
+            _chat_threads[run_id] = run.chat_thread_id
+            print(f"[chat_reply] restored thread {run.chat_thread_id} for run {run_id}")
+        else:
+            thread = await client.create_thread(assistant_id)
+            _chat_threads[run_id] = str(thread.thread_id)
+            if run:
+                run.chat_thread_id = _chat_threads[run_id]
+            print(f"[chat_reply] created new thread {_chat_threads[run_id]} for run {run_id}")
 
     reply = await _add_message_with_search(
         _chat_threads[run_id], message, plan=plan, memory="Auto",
@@ -784,6 +793,9 @@ async def ensure_run_in_memory(run_id: str, user_id: str, plan: str = "free") ->
     _run_llm_providers[run_id] = run.llm_provider
     _run_model_names[run_id] = run.model_name
     _run_users[run_id] = user_id
+    if run.chat_thread_id:
+        _chat_threads[run_id] = run.chat_thread_id
+        print(f"[ensure_run_in_memory] restored chat thread {run.chat_thread_id} for run {run_id}")
     return run
 
 
