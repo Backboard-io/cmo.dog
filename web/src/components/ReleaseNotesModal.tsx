@@ -9,9 +9,17 @@ type Release = {
 
 const RELEASES: Release[] = [
   {
-    version: "v2.5.1",
+    version: "v2.5.2",
     date: "Mar 2026",
     label: "Latest",
+    items: [
+      { emoji: "🧱", text: "Server-safe button variants to unblock Next.js prerendering" },
+      { emoji: "🧩", text: "Not-found and error screens now share the same style tokens safely" },
+    ],
+  },
+  {
+    version: "v2.5.1",
+    date: "Mar 2026",
     items: [
       { emoji: "🥶", text: "Delightful 404 page with Onni and clear next steps" },
       { emoji: "☕️", text: "Global error screen with recovery actions and friendly copy" },
